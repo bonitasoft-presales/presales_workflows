@@ -148,7 +148,7 @@ jobs:
               sudo docker logs bonita
           '
         env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
+          HOSTNAME: ${{AWS_PUBLIC_DNS_HOSTNAME}}
 
       - name: Publish services URLs
         run: |
