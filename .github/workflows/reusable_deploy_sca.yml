@@ -59,7 +59,7 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/bonita.lic ${{ secrets.AWS_SSH_USER }}@${HOSTNAME}:~/bonita.lic
         env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
+          HOSTNAME: ${{AWS_PUBLIC_DNS_HOSTNAME}}
 
       - name: Verify licence file
         run: |
