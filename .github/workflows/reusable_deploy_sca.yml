@@ -152,10 +152,10 @@ jobs:
 
       - name: Publish services URLs
         run: |
-          echo "::notice:: Bonita reverse proxy: http://${EC2_HOSTNAME}:${BONITA_PROXY_PORT}/bonita/"
-          echo "::notice:: Bonita URL: http://${EC2_HOSTNAME}:${BONITA_EXPOSED_PORT}/bonita/"
-          echo "::notice:: Keycloak URL: http://${EC2_HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
-          echo "::notice:: Mail URL: :http://${EC2_HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
+          echo "::notice:: Bonita reverse proxy: http://${HOSTNAME}:${BONITA_PROXY_PORT}/bonita/"
+          echo "::notice:: Bonita URL: http://${HOSTNAME}:${BONITA_EXPOSED_PORT}/bonita/"
+          echo "::notice:: Keycloak URL: http://${HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
+          echo "::notice:: Mail URL: :http://${HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
         env:
           HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
           BONITA_EXPOSED_PORT: "8081"
