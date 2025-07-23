@@ -59,7 +59,7 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/bonita.lic ${{ secrets.AWS_SSH_USER }}@${HOSTNAME}:~/bonita.lic
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Verify licence file
         run: |
@@ -70,7 +70,7 @@ jobs:
               ls -ltr ~/sca/bonita_data_lic
           '
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Stop docker compose
         run: |
@@ -85,7 +85,7 @@ jobs:
               sudo docker logout https://bonitasoft.jfrog.io
           '
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Configure env file for docker compose
         run: |
@@ -102,7 +102,7 @@ jobs:
               cat /home/ubuntu/sca/.env
           '
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Verify docker compose parsed
         run: |
@@ -115,7 +115,7 @@ jobs:
               sudo docker logout https://bonitasoft.jfrog.io
           '
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Start docker compose
         run: |
@@ -126,7 +126,7 @@ jobs:
               sudo docker logout https://bonitasoft.jfrog.io
           '
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Check HTTP status
         uses: laurentleseigneur/http-status-code@main
@@ -138,7 +138,7 @@ jobs:
           username: ${{ secrets.HEALTHZ_USERNAME }}
           password: ${{ secrets.HEALTHZ_PASSWORD }}
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Display docker logs
         if: always()
@@ -148,7 +148,7 @@ jobs:
               sudo docker logs bonita
           '
         env:
-          HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Publish services URLs
         run: |
@@ -157,7 +157,7 @@ jobs:
           echo "::notice:: Keycloak URL: http://${EC2_HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
           echo "::notice:: Mail URL: :http://${EC2_HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
         env:
-          EC2_HOSTNAME: ${{ needs.create_server.outputs.awsPublicDns }}
+          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
           BONITA_EXPOSED_PORT: "8081"
           BONITA_PROXY_PORT: "80"
           ROUNDCUBE_EXPOSED_PORT: "8088"
