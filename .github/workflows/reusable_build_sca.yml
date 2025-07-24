@@ -1,4 +1,4 @@
-name: build
+name: buildSca
 on:
   workflow_call:
 jobs:

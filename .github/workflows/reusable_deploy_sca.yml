@@ -1,4 +1,4 @@
-name: deplopy_sca
+name: deploySca
 on:
   workflow_call:
 jobs:
