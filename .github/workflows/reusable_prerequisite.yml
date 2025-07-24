@@ -1,7 +1,6 @@
 name: preRequisites
 on:
   workflow_call:
-  workflow_dispatch:
 
 jobs:
   check_prerequisites:
