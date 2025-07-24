@@ -1,0 +1,144 @@
+name: build
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  check_prerequisites:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Setup maven private repositories
+        uses: whelk-io/maven-settings-xml-action@v22
+        with:
+          repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              },
+              {
+                "id": "github-presales",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/bonitasoft-presales/*",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "true"
+                }
+              },
+              {
+                "id": "github-laurent",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/laurentleseigneur/*",
+                "releases": {
+                 "enabled": "true"
+                },
+                "snapshots": {
+                 "enabled": "true"
+                }
+              }
+            ]
+          plugin_repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              }
+            ]
+          servers: >
+            [
+              {
+                "id": "bar",
+                "username": "${{ secrets.JFROG_USER }}",
+                "password": "${{ secrets.JFROG_TOKEN }}"
+              },
+              {
+                "id": "github-presales",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              },
+              {
+                "id": "github-laurent",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              }
+            ]
+
+
+
+
+
+      
+
+      - name: Check for IT folder
+        id: check-it
+        run: |
+          if [ -d "IT" ]; then
+            echo "IT_FOLDER_EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "IT_FOLDER_EXISTS=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Check for Data gen folder
+        id: check-datagen
+        run: |
+          if [ -d "datagen" ]; then
+            echo "DATAGEN_FOLDER_EXISTS=true" >> $GITHUB_OUTPUT
+          else
+            echo "DATAGEN_FOLDER_EXISTS=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Log output
+        run: |
+          echo "IT folder_exists: [${{ steps.check-it.outputs.IT_FOLDER_EXISTS }}]"
+          echo "Data gen IT folder_exists: [${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }}]"
+
+      - name: Create YAML file
+        run: |
+          cat <<EOF > ${{ github.workspace }}/pre_requisites.yml
+          ${{ steps.check-it.outputs.IT_FOLDER_EXISTS }}
+          ${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }}
+          EOF
+
+      - name: Show created file
+        run: cat ${{ github.workspace }}/pre_requisites.yml
+
+      - name: Archive pre-requisites.yml file
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre_requisites
+          path: ${{ github.workspace }}/pre_requisites.yml
+
+
+
+
