@@ -57,24 +57,20 @@ jobs:
 
       - name: Transfer licence
         run: |
-          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/bonita.lic ${{ secrets.AWS_SSH_USER }}@${HOSTNAME}:~/bonita.lic
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
+          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/bonita.lic ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita.lic
 
       - name: Verify licence file
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${HOSTNAME} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               mkdir -p ~/sca/bonita_data_lic
               sudo chown -R ubuntu:ubuntu ~/sca/bonita_data_lic
               cp ~/bonita.lic ~/sca/bonita_data_lic
               ls -ltr ~/sca/bonita_data_lic
           '
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Stop docker compose
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${HOSTNAME} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
               sudo docker compose -f /home/ubuntu/sca/docker-compose-UIB.yml --env-file /home/ubuntu/sca/.env down -v
               sudo docker image rm bonita_sca:1.0
@@ -84,15 +80,13 @@ jobs:
               sudo docker images
               sudo docker logout https://bonitasoft.jfrog.io
           '
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Configure env file for docker compose
         run: |
-          echo "EC2_HOSTNAME=${HOSTNAME}" > ${{ github.workspace }}/ec2.properties
+          echo "EC2_HOSTNAME=${AWS_PUBLIC_DNS_HOSTNAME}" > ${{ github.workspace }}/ec2.properties
           cat ${{ github.workspace }}/ec2.properties
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/ec2.properties ${{ secrets.AWS_SSH_USER }}@${HOSTNAME}:~/ec2.properties
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${HOSTNAME} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               source ~/ec2.properties
               echo "ec2 hostname: ${EC2_HOSTNAME}"
               echo "env file before sed:"
@@ -101,12 +95,10 @@ jobs:
               echo "env file after sed:"
               cat /home/ubuntu/sca/.env
           '
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Verify docker compose parsed
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${HOSTNAME} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
               sudo docker image load -i ~/bonita_sca.tar
               sudo docker image load -i ~/uib/bonita_uib.tar
@@ -114,50 +106,41 @@ jobs:
               sudo docker compose -f /home/ubuntu/sca/docker-compose-UIB.yml --env-file /home/ubuntu/sca/.env config
               sudo docker logout https://bonitasoft.jfrog.io
           '
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Start docker compose
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${HOSTNAME} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
               sudo docker images
               sudo docker compose -f /home/ubuntu/sca/docker-compose-UIB.yml --env-file /home/ubuntu/sca/.env up -d
               sudo docker logout https://bonitasoft.jfrog.io
           '
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Check HTTP status
         uses: laurentleseigneur/http-status-code@main
         with:
-          url: "http://${HOSTNAME}:8081/bonita/healthz"
+          url: "http://${AWS_PUBLIC_DNS_HOSTNAME}:8081/bonita/healthz"
           code: 200
           timeout: 360
           interval: 5
           username: ${{ secrets.HEALTHZ_USERNAME }}
           password: ${{ secrets.HEALTHZ_PASSWORD }}
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Display docker logs
         if: always()
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${HOSTNAME} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo docker ps
               sudo docker logs bonita
           '
-        env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
 
       - name: Publish services URLs
         run: |
-          echo "::notice:: Bonita reverse proxy: http://${HOSTNAME}:${BONITA_PROXY_PORT}/bonita/"
-          echo "::notice:: Bonita URL: http://${HOSTNAME}:${BONITA_EXPOSED_PORT}/bonita/"
-          echo "::notice:: Keycloak URL: http://${HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
-          echo "::notice:: Mail URL: :http://${HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
+          echo "::notice:: Bonita reverse proxy: http://${AWS_PUBLIC_DNS_HOSTNAME}:${BONITA_PROXY_PORT}/bonita/"
+          echo "::notice:: Bonita URL: http://${AWS_PUBLIC_DNS_HOSTNAME}:${BONITA_EXPOSED_PORT}/bonita/"
+          echo "::notice:: Keycloak URL: http://${AWS_PUBLIC_DNS_HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
+          echo "::notice:: Mail URL: :http://${AWS_PUBLIC_DNS_HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
         env:
-          HOSTNAME: ${AWS_PUBLIC_DNS_HOSTNAME}
           BONITA_EXPOSED_PORT: "8081"
           BONITA_PROXY_PORT: "80"
           ROUNDCUBE_EXPOSED_PORT: "8088"
