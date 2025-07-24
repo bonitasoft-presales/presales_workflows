@@ -1,0 +1,144 @@
+name: runIT
+on:
+  workflow_call:
+jobs:
+  build_SCA:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Setup maven private repositories
+        uses: whelk-io/maven-settings-xml-action@v22
+        with:
+          repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              },
+              {
+                "id": "github-presales",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/bonitasoft-presales/*",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "true"
+                }
+              },
+              {
+                "id": "github-laurent",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/laurentleseigneur/*",
+                "releases": {
+                 "enabled": "true"
+                },
+                "snapshots": {
+                 "enabled": "true"
+                }
+              }
+            ]
+          plugin_repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              }
+            ]
+          servers: >
+            [
+              {
+                "id": "bar",
+                "username": "${{ secrets.JFROG_USER }}",
+                "password": "${{ secrets.JFROG_TOKEN }}"
+              },
+              {
+                "id": "github-presales",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              },
+              {
+                "id": "github-laurent",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              }
+            ]
+
+      - name: Login to Jfrog
+        run: docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
+
+      # comes from create server
+      - name: Download artifact instance.yaml file
+        uses: actions/download-artifact@v4
+        with:
+          name: aws_instance
+
+      # comes from pre requisites
+      - name: Download artifact instance.yaml file
+        uses: actions/download-artifact@v4
+        with:
+          name: pre_requisites
+
+
+      - name: read-yaml-instance-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-instance-file
+        with:
+          config: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: read-yaml-requisite-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-requisite-file
+        with:
+          config: ${{ github.workspace }}/pre_requisites.yaml
+
+
+      - name: set env variables
+        id: set-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
+          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['IT_FOLDER_EXISTS'] }}" >> $GITHUB_ENV 
+          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['DATAGEN_FOLDER_EXISTS'] }}" >> $GITHUB_ENV 
+
+      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: display-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
+          echo "IT_FOLDER_EXISTS: [${IT_FOLDER_EXISTS}]" 
+          echo "DATAGEN_FOLDER_EXISTS: [${DATAGEN_FOLDER_EXISTS}]" 
+
+      - name: run integration test
+        if: env.DATAGEN_FOLDER_EXISTS == 'true'
+        run: |
+          echo "Integration test using Bonita test toolkit"
+          ./mvnw --batch-mode --no-transfer-progress clean verify \
+          -f datagen/pom.xml \
+          -Dbonita.url=http://${AWS_PUBLIC_DNS_HOSTNAME}:8081/bonita \
+          -DSMTP_SERVER=greenmail \
+          -DSMTP_PORT=3025
