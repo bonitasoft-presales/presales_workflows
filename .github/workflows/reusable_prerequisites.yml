@@ -124,25 +124,25 @@ jobs:
 
       - name: Create YAML file
         run: |
-          cat <<EOF > ${{ github.workspace }}/pre_requisites.yml
+          cat <<EOF > ${{ github.workspace }}/pre_requisites.yaml
           IT_FOLDER_EXISTS: ${{ steps.check-it.outputs.IT_FOLDER_EXISTS }}
-          DATAGEN_FOLDER_EXISTS:  ${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }}
+          DATAGEN_FOLDER_EXISTS: ${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }}
           EOF
 
       - name: Show created file
-        run: cat ${{ github.workspace }}/pre_requisites.yml
+        run: cat ${{ github.workspace }}/pre_requisites.yaml
 
       - name: Archive pre-requisites.yml file
         uses: actions/upload-artifact@v4
         with:
           name: pre_requisites
-          path: ${{ github.workspace }}/pre_requisites.yml
+          path: ${{ github.workspace }}/pre_requisites.yaml
 
       - name: read-yaml-file
         uses: pietrobolcato/action-read-yaml@1.1.0
         id: read-yaml-file
         with:
-          config: ${{ github.workspace }}/pre_requisites.yml
+          config: ${{ github.workspace }}/pre_requisites.yaml
 
       - name: display variables
         id: set-env-variable
