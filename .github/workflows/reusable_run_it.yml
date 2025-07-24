@@ -1,4 +1,4 @@
-name: buildSca
+name: runIT
 on:
   workflow_call:
 jobs:
