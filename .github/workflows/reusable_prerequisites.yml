@@ -125,8 +125,8 @@ jobs:
       - name: Create YAML file
         run: |
           cat <<EOF > ${{ github.workspace }}/pre_requisites.yml
-          ${{ steps.check-it.outputs.IT_FOLDER_EXISTS }}
-          ${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }}
+          IT_FOLDER_EXISTS: ${{ steps.check-it.outputs.IT_FOLDER_EXISTS }}
+          DATAGEN_FOLDER_EXISTS:  ${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }}
           EOF
 
       - name: Show created file
@@ -138,6 +138,17 @@ jobs:
           name: pre_requisites
           path: ${{ github.workspace }}/pre_requisites.yml
 
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-file
+        with:
+          config: ${{ github.workspace }}/pre_requisites.yml
+
+      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: set-env-variable
+        run: |
+          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['IT_FOLDER_EXISTS'] }}"  
+          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['DATAGEN_FOLDER_EXISTS'] }}"  
 
 
 
