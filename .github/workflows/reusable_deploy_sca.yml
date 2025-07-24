@@ -85,7 +85,7 @@ jobs:
         run: |
           echo "EC2_HOSTNAME=${AWS_PUBLIC_DNS_HOSTNAME}" > ${{ github.workspace }}/ec2.properties
           cat ${{ github.workspace }}/ec2.properties
-          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/ec2.properties ${{ secrets.AWS_SSH_USER }}@${HOSTNAME}:~/ec2.properties
+          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/ec2.properties ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/ec2.properties
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               source ~/ec2.properties
               echo "ec2 hostname: ${EC2_HOSTNAME}"
