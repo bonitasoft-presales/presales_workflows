@@ -37,7 +37,8 @@ jobs:
 
           # deploy  UIB applications
           # prepare zip
-          rm uib_applications.zip || true  # Ignore failure of this command
+          rm -rf ${UIB_FOLDER}
+          mkdir -p ${UIB_FOLDER}
           ls -ltr "${PROJECT_FOLDER}/uib"
           find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
           unzip -l "${UIB_FOLDER}/uib_applications.zip"
