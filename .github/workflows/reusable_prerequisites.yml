@@ -144,7 +144,7 @@ jobs:
         with:
           config: ${{ github.workspace }}/pre_requisites.yml
 
-      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+      - name: display variables
         id: set-env-variable
         run: |
           echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['IT_FOLDER_EXISTS'] }}"  
