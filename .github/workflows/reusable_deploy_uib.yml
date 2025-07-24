@@ -1,0 +1,70 @@
+name: deployUib
+on:
+  workflow_call:
+jobs:
+  deploy_UIB:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # comes from create server
+      - name: Download artifact instance.yaml file
+        uses: actions/download-artifact@v4
+        with:
+          name: aws_instance
+
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-file
+        with:
+          config: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: set-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
+
+      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: display-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
+
+      - name: deploy UIB applications
+        id: display-uib
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
+
+          # deploy  UIB applications
+          # prepare zip
+          rm uib_applications.zip || true  # Ignore failure of this command
+          ls -ltr "${PROJECT_FOLDER}/uib"
+          find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
+          unzip -l "${UIB_FOLDER}/uib_applications.zip"
+          
+          BONITA_URL="http://${AWS_PUBLIC_DNS_HOSTNAME}/bonita/loginservice"
+          UIB_URL="http://${AWS_PUBLIC_DNS_HOSTNAME}/uib/api/v1"
+          
+          # Generate cookie file
+          #login to set cookies
+          rm "${UIB_FOLDER}/saved_cookies.zip" || true  # Ignore failure of this command
+          
+          curl -v -c "${UIB_FOLDER}/saved_cookies.zip" \
+          --url ${BONITA_URL} \
+          --header 'Content-Type: application/x-www-form-urlencoded' \
+          --data-urlencode 'username=install' \
+          --data-urlencode 'password=install' \
+          --data-urlencode 'redirect=false' \
+          --data-urlencode 'redirectURL='
+          
+          #cleanup apps
+          curl -b "${UIB_FOLDER}/saved_cookies.zip" -X DELETE "${UIB_URL}/applications/all" \
+          --header 'x-requested-by: Appsmith' \
+          
+          # deploy all
+          curl -b "${UIB_FOLDER}/saved_cookies.zip" -X POST "${UIB_URL}/applications/import-bulk" \
+          --header 'x-requested-by: Appsmith' \
+          --form 'file=@"${UIB_FOLDER}/uib_applications.zip"'
+        env:
+          PROJECT_FOLDER: "${{ github.workspace }}"
+          UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"

@@ -131,7 +131,7 @@ jobs:
         run: |
           echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
           echo "IT_FOLDER_EXISTS: [${IT_FOLDER_EXISTS}]" 
-          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
+          echo "DATAGEN_FOLDER_EXISTS: [${DATAGEN_FOLDER_EXISTS}]" 
 
       - name: run integration test
         if: env.IT_FOLDER_EXISTS == 'true'
