@@ -134,7 +134,7 @@ jobs:
           echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
 
       - name: run integration test
-        if: ${IT_FOLDER_EXISTS}==true
+        if: env.IT_FOLDER_EXISTS == 'true'
         run: |
           echo "Integration test using Bonita test toolkit"
           ./mvnw --batch-mode --no-transfer-progress clean verify \
