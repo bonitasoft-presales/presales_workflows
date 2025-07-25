@@ -8,11 +8,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-
+      # simulate AWS yaml instance file
       - name: Create YAML file
         run: |
           cat <<EOF > ${{ github.workspace }}/aws_instance.yaml
-          AWS_PUBLIC_DNS_HOSTNAME: ec2-34-244-46-115.eu-west-1.compute.amazonaws.com
+          publicDnsName: ec2-34-244-46-115.eu-west-1.compute.amazonaws.com
           EOF
 
       - name: Archive artifact instance.yaml file
