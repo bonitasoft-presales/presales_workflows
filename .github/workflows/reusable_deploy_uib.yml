@@ -48,22 +48,23 @@ jobs:
           
           # Generate cookie file
           #login to set cookies
-          rm "${UIB_FOLDER}/saved_cookies.zip" || true  # Ignore failure of this command
           
-          curl -v -c "${UIB_FOLDER}/saved_cookies.zip" \
+          curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
           --url ${BONITA_URL} \
           --header 'Content-Type: application/x-www-form-urlencoded' \
           --data-urlencode 'username=install' \
           --data-urlencode 'password=install' \
           --data-urlencode 'redirect=false' \
           --data-urlencode 'redirectURL='
+        
+          cat ${UIB_FOLDER}/saved_cookies.txt
           
           #cleanup apps
-          curl -b "${UIB_FOLDER}/saved_cookies.zip" -X DELETE "${UIB_URL}/applications/all" \
+          curl -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
           --header 'x-requested-by: Appsmith' \
           
           # deploy all
-          curl -b "${UIB_FOLDER}/saved_cookies.zip" -X POST "${UIB_URL}/applications/import-bulk" \
+          curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
           --header 'x-requested-by: Appsmith' \
           --form 'file=@"${UIB_FOLDER}/uib_applications.zip"'
         env:
