@@ -58,7 +58,9 @@ jobs:
           --data-urlencode 'redirectURL='
         
           cat ${UIB_FOLDER}/saved_cookies.txt
-          
+          ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
+          echo "deploy zip applications: ${ZIP_FILE}"
+  
           #cleanup apps
           curl -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
           --header 'x-requested-by: Appsmith' \
@@ -66,7 +68,8 @@ jobs:
           # deploy all
           curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
           --header 'x-requested-by: Appsmith' \
-          --form 'file=@"${UIB_FOLDER}/uib_applications.zip"'
+          --form "file=@${ZIP_FILE}"
+
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
