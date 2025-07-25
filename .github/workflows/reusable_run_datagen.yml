@@ -1,4 +1,4 @@
-name: runIT
+name: runDataGeneration
 on:
   workflow_call:
 jobs:
