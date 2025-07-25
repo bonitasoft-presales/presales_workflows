@@ -29,6 +29,6 @@ jobs:
   deploy_UIB:
     needs:
       - fake_build
-    uses: ./reusable_deploy_uib.yml
+    uses: ./.github/workflows/reusable_deploy_uib.yml
     secrets: inherit
 
