@@ -47,9 +47,11 @@ jobs:
           UIB_URL="http://${AWS_PUBLIC_DNS_HOSTNAME}/uib/api/v1"
           
           echo "BONITA_URL: ${BONITA_URL}"
-          echo "UIB_URL: ${UIB_URLs}"
+          echo "UIB_URL: ${UIB_URL}"
           
           # Generate cookie file
+          
+           echo "*** connect"
           
           #login to set cookies
           curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
@@ -58,17 +60,17 @@ jobs:
           --data-urlencode 'username=install' \
           --data-urlencode 'password=install' \
           --data-urlencode 'redirect=false' \
-        
-          --data-urlencode 'redirectURL='
-          cat ${UIB_FOLDER}/saved_cookies.txt
+          --data-urlencode 'redirectURL=''
+          
+          ls -ltr ${UIB_FOLDER}/saved_cookies.txt
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
-  
-          #cleanup apps
+
+          echo "*** cleanup connect"
           curl -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
           --header 'x-requested-by: Appsmith' \
           
-          # deploy all
+          echo "*** deplpoy zip"
           curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
           --header 'x-requested-by: Appsmith' \
           --form "file=@${ZIP_FILE}"
