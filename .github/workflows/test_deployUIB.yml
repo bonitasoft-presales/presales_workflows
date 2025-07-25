@@ -3,6 +3,7 @@ on:
   workflow_dispatch:
 jobs:
   fake_build:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
