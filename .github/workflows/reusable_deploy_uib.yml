@@ -51,16 +51,17 @@ jobs:
           
           # Generate cookie file
           
-           echo "*** connect"
+          echo "*** connect"
           
           #login to set cookies
+          
           curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
           --url ${BONITA_URL} \
           --header 'Content-Type: application/x-www-form-urlencoded' \
           --data-urlencode 'username=install' \
           --data-urlencode 'password=install' \
           --data-urlencode 'redirect=false' \
-          --data-urlencode 'redirectURL=''
+          --data-urlencode 'redirectURL='
           
           ls -ltr ${UIB_FOLDER}/saved_cookies.txt
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
