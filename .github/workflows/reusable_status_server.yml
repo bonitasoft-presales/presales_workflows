@@ -1,0 +1,178 @@
+name: statusServer
+on:
+  workflow_call:
+  workflow_dispatch:
+jobs:
+  status_server:
+    runs-on: ubuntu-latest
+    outputs:
+      awsPublicDns: ${{ steps.read-yaml.outputs.publicDnsName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Setup maven private repositories
+        uses: whelk-io/maven-settings-xml-action@v22
+        with:
+          repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              },
+              {
+                "id": "github-presales",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/bonitasoft-presales/*",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "true"
+                }
+              },
+              {
+                "id": "github-laurent",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/laurentleseigneur/*",
+                "releases": {
+                 "enabled": "true"
+                },
+                "snapshots": {
+                 "enabled": "true"
+                }
+              }
+            ]
+          plugin_repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              }
+            ]
+          servers: >
+            [
+              {
+                "id": "bar",
+                "username": "${{ secrets.JFROG_USER }}",
+                "password": "${{ secrets.JFROG_TOKEN }}"
+              },
+              {
+                "id": "github-presales",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              },
+              {
+                "id": "github-laurent",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              }
+            ]
+
+      - name: Create AWS config credential folder
+        run: |
+          mkdir -p /home/runner/.aws
+          ls -ltr /home/runner/.aws
+
+      - name: Create AWS config region file
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '/home/runner/.aws'
+          isAbsolutePath: true
+          file: 'config'
+          content: |
+            [default]
+            region = eu-west-1
+
+      - name: Create AWS config credential file
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '/home/runner/.aws'
+          isAbsolutePath: true
+          file: 'credentials'
+          content: |
+            [default]
+            aws_access_key_id = ${{ secrets.AWS_KEY_ID }}
+            aws_secret_access_key = ${{ secrets.AWS_ACCESS_KEY }}
+            region = eu-west-1
+
+      - name: Set AWS stack ID
+        id: aws_stack_id
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
+          modifiedBranch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')
+          stackId="${modifiedRepo}_${modifiedBranch}"
+          echo "stackId: ${stackId}"
+          echo "stackId=${stackId}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Create AWS server
+        run: |
+          bonitaAwsVersion="1.8"
+          keyName="presale-ci-eu-west-1"
+          securityGroup="bonitasoft_presales"
+          bonitaEnvironment="integration"
+          # ubuntu server 2024.04 LTS x86
+          amiId="ami-0776c814353b4814d"
+          #instance type 
+          instanceType="t3.large"
+          diskSize="20"
+
+          # get aws presales lib
+          ./mvnw --batch-mode --no-transfer-progress dependency:copy -Dartifact=com.bonitasoft.presales.aws:bonita-aws:${bonitaAwsVersion}:jar:jar-with-dependencies -DoutputDirectory=.
+          # create server 
+          java -jar bonita-aws-${bonitaAwsVersion}-jar-with-dependencies.jar \
+          -c status \
+          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
+          --key-name ${keyName} \
+
+      - name: Copy aws yaml file
+        run: |
+          ls -ltr ${{ github.workspace }}/${{ steps.aws_stack_id.outputs.stackId }}.yaml
+          cp ${{ github.workspace }}/${{ steps.aws_stack_id.outputs.stackId }}.yaml ${{ github.workspace }}/aws_instance.yaml
+          ls -ltr ${{ github.workspace }}/aws_instance.yaml
+
+      - name: Archive artifact instance.yaml file
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws_instance
+          path: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-file
+        with:
+          config: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: set-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
+
+      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: display-env-variable
+        run: |
+          echo "set AWS_PUBLIC_DNS_HOSTNAME to [${AWS_PUBLIC_DNS_HOSTNAME}]" 

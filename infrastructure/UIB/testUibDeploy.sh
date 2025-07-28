@@ -2,7 +2,7 @@
 
 set -ev
 
-PROJECT_FOLDER="${PWD}/.."
+PROJECT_FOLDER="${PWD}/../.."
 AWS_PUBLIC_DNS_HOSTNAME="ec2-34-244-46-115.eu-west-1.compute.amazonaws.com"
 UIB_FOLDER=${PWD}/temp_uib
 
