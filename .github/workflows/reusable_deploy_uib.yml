@@ -49,7 +49,7 @@ jobs:
           
           # Generate cookie file
           
-          echo "\n*** connect\n"
+          echo "*** connect ***"
           
           #login to set cookies
           
@@ -65,12 +65,12 @@ jobs:
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
 
-          echo "\n*** cleanup\n"
-          curl -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
+          echo " *** cleanup *** "
+          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
           --header 'x-requested-by: Appsmith' \
           
-          echo "\n*** deploy zip\n"
-          curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
+          echo " *** deploy zip ***"
+          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
           --header 'x-requested-by: Appsmith' \
           --form "file=@${ZIP_FILE}"
 
