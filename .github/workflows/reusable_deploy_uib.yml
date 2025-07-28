@@ -33,8 +33,6 @@ jobs:
       - name: deploy UIB applications
         id: display-uib
         run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
-
           # deploy  UIB applications
           # prepare zip
           rm -rf ${UIB_FOLDER}
@@ -51,7 +49,7 @@ jobs:
           
           # Generate cookie file
           
-          echo "*** connect"
+          echo "\n*** connect\n"
           
           #login to set cookies
           
@@ -67,11 +65,11 @@ jobs:
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
 
-          echo "*** cleanup connect"
+          echo "\n*** cleanup\n"
           curl -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
           --header 'x-requested-by: Appsmith' \
           
-          echo "*** deplpoy zip"
+          echo "\n*** deploy zip\n"
           curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
           --header 'x-requested-by: Appsmith' \
           --form "file=@${ZIP_FILE}"
