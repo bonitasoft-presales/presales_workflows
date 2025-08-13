@@ -36,7 +36,7 @@ jobs:
         id: loginBonita
         uses: fjogeleit/http-request-action@v1
         with:
-          url: "http://$AWS_PUBLIC_DNS_HOSTNAME/bonita/loginservice"
+          url: "http://${{ AWS_PUBLIC_DNS_HOSTNAME }}/bonita/loginservice"
           method: 'POST'
           customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
           data: '{"username"="install","password":"install","redirect":"false","redirectURL":""}'
