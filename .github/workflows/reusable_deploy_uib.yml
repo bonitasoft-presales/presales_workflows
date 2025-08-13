@@ -48,7 +48,10 @@ jobs:
           echo ${{ steps.loginBonita.outputs.headers }}
           echo ${{ steps.loginBonita.outputs.status }}
           
-          cookie=$(echo '${{ steps.loginBonita.outputs.headers }}' | jq -r '."set-cookie" | join("; ")' 
+          cookie=$(echo '${{ steps.loginBonita.outputs.headers }}' \
+            | jq -r '."set-cookie"[]' \
+            | cut -d';' -f1 \
+            | paste -sd'; ' -)
           echo "*** ${cookie} ***"
           
           echo "COOKIES=$cookie" >> $GITHUB_ENV
