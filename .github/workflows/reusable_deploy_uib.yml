@@ -4,6 +4,8 @@ on:
 jobs:
   deploy_UIB:
     runs-on: ubuntu-latest
+    env:
+      AWS_PUBLIC_DNS_HOSTNAME:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
