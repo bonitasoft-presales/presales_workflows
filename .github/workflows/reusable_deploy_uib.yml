@@ -39,7 +39,7 @@ jobs:
           url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/bonita/loginservice"
           method: 'POST'
           customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
-          data: '{"username"="install","password":"install","redirect":"false","redirectURL":""}'
+          data: 'username=install&password=install&redirect=false&redirectURL='
 
       - name: Show login Response
         run: |
