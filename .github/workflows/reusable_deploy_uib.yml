@@ -48,6 +48,7 @@ jobs:
           echo ${{ steps.loginBonita.outputs.status }}
 #          echo ${{ fromJson(steps.loginBonita.outputs.response).field_you_want_to_access }}
 
+
       - name: deploy UIB applications
         id: display-uib
         run: |
@@ -95,3 +96,20 @@ jobs:
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
+
+      - name: cleanup
+        id: cleanup
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/all"
+          method: 'DELETE'
+          customHeaders: '{"Content-Type": "application/x-www-form-urlencoded","x-requested-by": "Appsmith"}'
+
+
+      - name: Show cleanup Response
+        run: |
+          echo ${{ steps.cleanup.outputs.response }}
+          echo ${{ steps.cleanup.outputs.headers }}
+          echo ${{ steps.cleanup.outputs.status }}
+      #          echo ${{ fromJson(steps.cleanup.outputs.response).field_you_want_to_access }}
+

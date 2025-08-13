@@ -1,6 +1,9 @@
 name: testUIB
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "fix/deploy_UIB"
 jobs:
   fake_build:
     runs-on: ubuntu-latest
