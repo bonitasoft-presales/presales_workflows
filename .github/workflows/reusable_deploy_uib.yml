@@ -48,10 +48,11 @@ jobs:
           echo ${{ steps.loginBonita.outputs.headers }}
           echo ${{ steps.loginBonita.outputs.status }}
           
-          cookie_header="${{ steps.loginBonita.outputs.headers }}"
-          echo $cookie_header
+          echo '${{ steps.loginBonita.outputs.headers }}' | jq -r '."set-cookie"[0]' > cookie.txt
+          cookie=$(cat cookie.txt | cut -d';' -f1)
+          cat cookie.txt
+          echo "*** ${cookie} ***
           
-          cookie=$(echo "$cookie_header" | tr '\\r' '\\n' | grep -i '^set-cookie' | head -n1 | cut -d' ' -f2-)
           echo "COOKIES=$cookie" >> $GITHUB_ENV
 
 
