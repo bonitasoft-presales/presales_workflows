@@ -7,6 +7,7 @@ jobs:
     env:
       AWS_PUBLIC_DNS_HOSTNAME:
       COOKIES:
+      ZIP_TO_DEPLOY:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,31 +34,6 @@ jobs:
         run: |
           echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
 
-      - name: login
-        id: loginBonita
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/bonita/loginservice"
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
-          data: 'username=install&password=install&redirect=false&redirectURL='
-
-      - name: Show login Response
-        run: |
-          echo ${{ steps.loginBonita.outputs.response }}
-          echo ${{ steps.loginBonita.outputs.headers }}
-          echo ${{ steps.loginBonita.outputs.status }}
-          
-          cookie=$(echo '${{ steps.loginBonita.outputs.headers }}' \
-          | jq -r '."set-cookie"[]' \
-          | cut -d';' -f1 \
-          | tr '\n' '\r' \
-          | sed 's/\r/; /g' \
-          | sed 's/; $//')
-          echo "*** ${cookie} ***"
-          
-          echo "COOKIES=$cookie" >> $GITHUB_ENV
-
 
       - name: deploy UIB applications
         id: display-uib
@@ -81,31 +57,59 @@ jobs:
           echo "*** connect ***"
           
           #login to set cookies
-          
-          curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
-          --url ${BONITA_URL} \
-          --header 'Content-Type: application/x-www-form-urlencoded' \
-          --data-urlencode 'username=install' \
-          --data-urlencode 'password=install' \
-          --data-urlencode 'redirect=false' \
-          --data-urlencode 'redirectURL='
-          
+
+#          curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
+#          --url ${BONITA_URL} \
+#          --header 'Content-Type: application/x-www-form-urlencoded' \
+#          --data-urlencode 'username=install' \
+#          --data-urlencode 'password=install' \
+#          --data-urlencode 'redirect=false' \
+#          --data-urlencode 'redirectURL='
+
           ls -ltr ${UIB_FOLDER}/saved_cookies.txt
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
 
-          echo " *** cleanup *** "
-          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
-          --header 'x-requested-by: Appsmith' \
-          
-          echo " *** deploy zip ***"
-          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
-          --header 'x-requested-by: Appsmith' \
-          --form "file=@${ZIP_FILE}"
+          echo "ZIP_TO_DEPLOY=$ZIP_FILE" >> $GITHUB_ENV
+#          echo " *** cleanup *** "
+#          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
+#          --header 'x-requested-by: Appsmith' \
+#
+#          echo " *** deploy zip ***"
+#          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
+#          --header 'x-requested-by: Appsmith' \
+#          --form "file=@${ZIP_FILE}"
 
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
+
+
+      - name: login
+        id: loginBonita
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/bonita/loginservice"
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
+          data: 'username=install&password=install&redirect=false&redirectURL='
+
+      - name: setup cookies from login Response
+        run: |
+          echo ${{ steps.loginBonita.outputs.response }}
+          echo ${{ steps.loginBonita.outputs.headers }}
+          echo ${{ steps.loginBonita.outputs.status }}
+          
+          cookie=$(echo '${{ steps.loginBonita.outputs.headers }}' \
+          | jq -r '."set-cookie"[]' \
+          | cut -d';' -f1 \
+          | tr '\n' '\r' \
+          | sed 's/\r/; /g' \
+          | sed 's/; $//')
+          echo "*** ${cookie} ***"
+          
+          echo "COOKIES=$cookie" >> $GITHUB_ENV
+
 
       - name: cleanup
         id: cleanup
