@@ -2,7 +2,7 @@ name: runIT
 on:
   workflow_call:
 jobs:
-  build_SCA:
+  run_IT:
     runs-on: ubuntu-latest
     permissions:
       contents: read

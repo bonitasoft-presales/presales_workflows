@@ -30,6 +30,22 @@ jobs:
         run: |
           echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
 
+      - name: login
+        id: loginBonita
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: "http://${AWS_PUBLIC_DNS_HOSTNAME}/bonita/loginservice"
+          method: 'POST'
+          customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
+          data: '{"username"="install","password":"install","redirect":"false","redirectURL":""}'
+
+      - name: Show login Response
+        run: |
+          echo ${{ steps.loginBonita.outputs.response }}
+          echo ${{ steps.loginBonita.outputs.headers }}
+          echo ${{ steps.loginBonita.outputs.status }}
+#          echo ${{ fromJson(steps.loginBonita.outputs.response).field_you_want_to_access }}
+
       - name: deploy UIB applications
         id: display-uib
         run: |

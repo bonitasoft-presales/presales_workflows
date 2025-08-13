@@ -1,4 +1,4 @@
-name: testUIB
+name: testAWSstatus
 on:
   workflow_dispatch:
 jobs:
@@ -12,7 +12,7 @@ jobs:
       - name: Create YAML file
         run: |
           cat <<EOF > ${{ github.workspace }}/aws_instance.yaml
-          publicDnsName: ec2-3-255-139-245.eu-west-1.compute.amazonaws.com
+          publicDnsName: ec2-34-244-46-115.eu-west-1.compute.amazonaws.com
           EOF
 
       - name: Archive artifact instance.yaml file

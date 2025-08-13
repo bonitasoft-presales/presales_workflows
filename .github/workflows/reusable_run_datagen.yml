@@ -2,7 +2,7 @@ name: runDataGeneration
 on:
   workflow_call:
 jobs:
-  build_SCA:
+  run_data_generation:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -133,7 +133,7 @@ jobs:
           echo "IT_FOLDER_EXISTS: [${IT_FOLDER_EXISTS}]" 
           echo "DATAGEN_FOLDER_EXISTS: [${DATAGEN_FOLDER_EXISTS}]" 
 
-      - name: run integration test
+      - name: run datagen test
         if: env.DATAGEN_FOLDER_EXISTS == 'true'
         run: |
           echo "Integration test using Bonita test toolkit"
