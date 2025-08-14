@@ -6,17 +6,32 @@ on:
         required: true
         type: string
         description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
-      zip_to_deploy:
-        required: true
-        type: string
-        description: "zip file path in workspace, e.g. /home/runner/work/presales_workflows/presales_workflows/temp_ui_builder/uib_applications.zip"
 
 jobs:
   deploy_UIB:
     runs-on: ubuntu-latest
     env:
       COOKIES:
+      ZIP_TO_DEPLOY:
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: prepare UIB applications
+        id: zip-applications
+        run: |
+          rm -rf ${UIB_FOLDER}
+          mkdir -p ${UIB_FOLDER}
+          ls -ltr "${PROJECT_FOLDER}/uib"
+          find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
+          unzip -l "${UIB_FOLDER}/uib_applications.zip"
+          ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
+          echo "deploy zip applications: ${ZIP_FILE}"
+          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> $GITHUB_ENV
+        env:
+          PROJECT_FOLDER: "${{ github.workspace }}"
+          UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
+
       - name: login
         id: loginBonita
         uses: fjogeleit/http-request-action@v1.16.4
@@ -57,7 +72,7 @@ jobs:
           url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/import-bulk"
           method: 'POST'
           customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-          files: '{ "file": "${{ inputs.zip_to_deploy }}" }'
+          files: '{ "file": "${{ env.ZIP_TO_DEPLOY }}" }'
 
       - name: Show deploy Response
         run: |
