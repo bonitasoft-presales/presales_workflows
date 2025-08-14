@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - "fix/deploy_UIB"
+  env:
+    ZIP_TO_DEPLOY:
 jobs:
   fake_build:
     runs-on: ubuntu-latest
-    env:
-      ZIP_TO_DEPLOY:
 
     steps:
       - name: Checkout
