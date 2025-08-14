@@ -1,6 +1,17 @@
 name: deployUib
 on:
   workflow_call:
+    inputs:
+      bonita_dns_name:
+        required: true
+        type: string
+        description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
+      zip_to_deploy:
+        required: true
+        type: string
+        description: "zip file path in workspace, e.g. /home/runner/work/presales_workflows/presales_workflows/temp_ui_builder/uib_applications.zip"
+
+
 jobs:
   deploy_UIB:
     runs-on: ubuntu-latest
@@ -9,6 +20,12 @@ jobs:
       COOKIES:
       ZIP_TO_DEPLOY:
     steps:
+      - name: setup
+        run : |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ inputs.bonita_dns_name }}" >> $GITHUB_ENV 
+          echo "ZIP_TO_DEPLOY=${{ inputs.zip_to_deploy }}" >> $GITHUB_ENV 
+      
+
       - name: Checkout
         uses: actions/checkout@v4
 
