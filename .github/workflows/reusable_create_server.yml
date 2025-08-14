@@ -168,14 +168,14 @@ jobs:
 
       - name: read-yaml-file
         uses: pietrobolcato/action-read-yaml@1.1.0
-        id: read-yaml-file
+        id: read-yaml
         with:
           config: ${{ github.workspace }}/aws_instance.yaml
 
       - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
         id: set-env-variable
         run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
 
       - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
         id: display-env-variable
