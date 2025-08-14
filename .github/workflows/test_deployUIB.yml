@@ -4,12 +4,12 @@ on:
   push:
     branches:
       - "fix/deploy_UIB"
-env:
-  ZIP_TO_DEPLOY:
 
 jobs:
   fake_build:
     runs-on: ubuntu-latest
+    outputs:
+      ZIP_TO_DEPLOY: ${{ steps.zip-applications.outputs.ZIP_TO_DEPLOY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
           unzip -l "${UIB_FOLDER}/uib_applications.zip"
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
-          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> $GITHUB_ENV
+          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> >> $GITHUB_OUTPUT
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
@@ -35,6 +35,6 @@ jobs:
     uses: ./.github/workflows/reusable_deploy_uib.yml
     with:
       bonita_dns_name: 'ec2-3-255-139-245.eu-west-1.compute.amazonaws.com'
-      zip_to_deploy: "${{ env.ZIP_TO_DEPLOY }}"
+      zip_to_deploy: ${{ needs.fake_build.outputs.ZIP_TO_DEPLOY }}
     secrets: inherit
 
