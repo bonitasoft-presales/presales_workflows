@@ -92,6 +92,23 @@ jobs:
           echo ${{ steps.cleanup.outputs.headers }}
           echo ${{ steps.cleanup.outputs.status }}
 
+
+      - name: deployJson
+        id: deployJson
+        uses: fjogeleit/http-request-action@v1
+        with:
+          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import"
+          method: 'POST'
+          customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
+          file: "${{ github.workspace }}/uib/Team-Management.json"
+
+      - name: Show deploy Response
+        run: |
+          echo ${{ steps.deployJson.outputs.response }}
+          echo ${{ steps.deployJson.outputs.headers }}
+          echo ${{ steps.deployJson.outputs.status }}
+
+
       - name: deploy
         id: deploy
         uses: fjogeleit/http-request-action@v1
