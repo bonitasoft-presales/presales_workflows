@@ -35,51 +35,17 @@ jobs:
           echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
 
 
-      - name: deploy UIB applications
-        id: display-uib
+      - name: prepare UIB applications
+        id: zip-applications
         run: |
-          # deploy  UIB applications
-          # prepare zip
           rm -rf ${UIB_FOLDER}
           mkdir -p ${UIB_FOLDER}
           ls -ltr "${PROJECT_FOLDER}/uib"
           find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
           unzip -l "${UIB_FOLDER}/uib_applications.zip"
-          
-          BONITA_URL="http://${AWS_PUBLIC_DNS_HOSTNAME}/bonita/loginservice"
-          UIB_URL="http://${AWS_PUBLIC_DNS_HOSTNAME}/uib/api/v1"
-          
-          echo "BONITA_URL: ${BONITA_URL}"
-          echo "UIB_URL: ${UIB_URL}"
-          
-          # Generate cookie file
-          
-          echo "*** connect ***"
-          
-          #login to set cookies
-
-#          curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
-#          --url ${BONITA_URL} \
-#          --header 'Content-Type: application/x-www-form-urlencoded' \
-#          --data-urlencode 'username=install' \
-#          --data-urlencode 'password=install' \
-#          --data-urlencode 'redirect=false' \
-#          --data-urlencode 'redirectURL='
-
-          ls -ltr ${UIB_FOLDER}/saved_cookies.txt
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
-
-          echo "ZIP_TO_DEPLOY=$ZIP_FILE" >> $GITHUB_ENV
-#          echo " *** cleanup *** "
-#          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
-#          --header 'x-requested-by: Appsmith' \
-#
-#          echo " *** deploy zip ***"
-#          curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
-#          --header 'x-requested-by: Appsmith' \
-#          --form "file=@${ZIP_FILE}"
-
+          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> $GITHUB_ENV
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
