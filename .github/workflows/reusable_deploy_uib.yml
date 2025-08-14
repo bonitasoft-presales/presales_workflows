@@ -98,11 +98,11 @@ jobs:
         with:
           url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import-bulk"
           method: 'POST'
-          customHeaders: '{"x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
+          customHeaders: '{"Content-Type": "application/zip","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
           file: ${{ env.ZIP_TO_DEPLOY }}
 
       - name: Show deploy Response
         run: |
-          echo ${{ steps.cleanup.deploy.response }}
-          echo ${{ steps.cleanup.deploy.headers }}
-          echo ${{ steps.cleanup.deploy.status }}
+          echo ${{ steps.deploy.outputs.response }}
+          echo ${{ steps.deploy.outputs.headers }}
+          echo ${{ steps.deploy.outputs.status }}
