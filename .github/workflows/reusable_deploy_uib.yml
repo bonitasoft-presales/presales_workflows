@@ -11,74 +11,17 @@ on:
         type: string
         description: "zip file path in workspace, e.g. /home/runner/work/presales_workflows/presales_workflows/temp_ui_builder/uib_applications.zip"
 
-
 jobs:
   deploy_UIB:
     runs-on: ubuntu-latest
     env:
-      AWS_PUBLIC_DNS_HOSTNAME:
       COOKIES:
-      ZIP_TO_DEPLOY:
     steps:
-      - name: setup
-        run : |
-          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ inputs.bonita_dns_name }}" >> $GITHUB_ENV 
-          echo "ZIP_TO_DEPLOY=${{ inputs.zip_to_deploy }}" >> $GITHUB_ENV 
-      
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # comes from create server
-      - name: Download artifact instance.yaml file
-        uses: actions/download-artifact@v4
-        with:
-          name: aws_instance
-
-      - name: read-yaml-file
-        uses: pietrobolcato/action-read-yaml@1.1.0
-        id: read-yaml-file
-        with:
-          config: ${{ github.workspace }}/aws_instance.yaml
-
-      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
-        id: set-env-variable
-        run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
-
-      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
-        id: display-env-variable
-        run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
-
-
-      - name: prepare UIB applications
-        id: zip-applications
-        run: |
-          rm -rf ${UIB_FOLDER}
-          mkdir -p ${UIB_FOLDER}
-          ls -ltr "${PROJECT_FOLDER}/uib"
-          find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
-          unzip -l "${UIB_FOLDER}/uib_applications.zip"
-          ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
-          echo "deploy zip applications: ${ZIP_FILE}"
-          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> $GITHUB_ENV
-        env:
-          PROJECT_FOLDER: "${{ github.workspace }}"
-          UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
-
-
-      # Active les logs détaillés
-      - name: Enable step debug
-        run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
-
-
-
       - name: login
         id: loginBonita
         uses: fjogeleit/http-request-action@v1.16.4
         with:
-          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/bonita/loginservice"
+          url: "http://${{ inputs.bonita_dns_name }}/bonita/loginservice"
           method: 'POST'
           customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
           data: 'username=install&password=install&redirect=false&redirectURL='
@@ -103,7 +46,7 @@ jobs:
         id: cleanup
         uses: fjogeleit/http-request-action@v1.16.4
         with:
-          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/all"
+          url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/all"
           method: 'DELETE'
           customHeaders: '{"x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
 
@@ -111,10 +54,10 @@ jobs:
         id: deploy
         uses: fjogeleit/http-request-action@v1.16.4
         with:
-          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import-bulk"
+          url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/import-bulk"
           method: 'POST'
           customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-          files: '{ "file": "${{ env.ZIP_TO_DEPLOY }}" }'
+          files: '{ "file": "${{ inputs.zip_to_deploy }}" }'
 
       - name: Show deploy Response
         run: |
