@@ -24,7 +24,7 @@ jobs:
           unzip -l "${UIB_FOLDER}/uib_applications.zip"
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
-          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> >> $GITHUB_OUTPUT
+          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> $GITHUB_OUTPUT
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
