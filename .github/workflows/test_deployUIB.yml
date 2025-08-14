@@ -7,29 +7,12 @@ on:
 jobs:
   fake_build:
     runs-on: ubuntu-latest
+    env:
+      ZIP_TO_DEPLOY:
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # simulate AWS yaml instance file
-      - name: Create YAML file
-        run: |
-          cat <<EOF > ${{ github.workspace }}/aws_instance.yaml
-          publicDnsName: ec2-3-255-139-245.eu-west-1.compute.amazonaws.com
-          EOF
-
-      - name: Archive artifact instance.yaml file
-        uses: actions/upload-artifact@v4
-        with:
-          name: aws_instance
-          path: ${{ github.workspace }}/aws_instance.yaml
-
-      - name: read-yaml-file
-        uses: pietrobolcato/action-read-yaml@1.1.0
-        id: read-yaml-file
-        with:
-          config: ${{ github.workspace }}/aws_instance.yaml
-
 
       - name: prepare UIB applications
         id: zip-applications
@@ -45,7 +28,6 @@ jobs:
         env:
           PROJECT_FOLDER: "${{ github.workspace }}"
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
-
 
   deploy_UIB:
     needs:
