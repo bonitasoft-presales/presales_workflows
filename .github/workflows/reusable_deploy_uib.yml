@@ -98,7 +98,7 @@ jobs:
         with:
           url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import-bulk"
           method: 'POST'
-          customHeaders: '{"Content-Type": "application/octet-stream","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
+          customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
           file: ${{ env.ZIP_TO_DEPLOY }}
 
       - name: Show deploy Response
