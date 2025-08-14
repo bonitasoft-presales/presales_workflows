@@ -3,7 +3,7 @@
 set -ev
 
 PROJECT_FOLDER="${PWD}/../.."
-AWS_PUBLIC_DNS_HOSTNAME="ec2-34-244-46-115.eu-west-1.compute.amazonaws.com"
+AWS_PUBLIC_DNS_HOSTNAME="ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
 UIB_FOLDER=${PWD}/temp_uib
 
 echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]"
@@ -50,7 +50,7 @@ echo "deploy zip applications: ${ZIP_FILE}"
 #--form 'file=@${ZIP_FILE}'
 
 # deploy all
-curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
+curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "${UIB_URL}/applications/import-bulk" \
 --header 'x-requested-by: Appsmith' \
 --form "file=@${ZIP_FILE}"
 

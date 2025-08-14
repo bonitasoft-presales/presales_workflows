@@ -1,35 +1,11 @@
 name: testUIB
 on:
   workflow_dispatch:
+
 jobs:
-  fake_build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # simulate AWS yaml instance file
-      - name: Create YAML file
-        run: |
-          cat <<EOF > ${{ github.workspace }}/aws_instance.yaml
-          publicDnsName: ec2-34-244-46-115.eu-west-1.compute.amazonaws.com
-          EOF
-
-      - name: Archive artifact instance.yaml file
-        uses: actions/upload-artifact@v4
-        with:
-          name: aws_instance
-          path: ${{ github.workspace }}/aws_instance.yaml
-
-      - name: read-yaml-file
-        uses: pietrobolcato/action-read-yaml@1.1.0
-        id: read-yaml-file
-        with:
-          config: ${{ github.workspace }}/aws_instance.yaml
-
   deploy_UIB:
-    needs:
-      - fake_build
     uses: ./.github/workflows/reusable_deploy_uib.yml
+    with:
+      bonita_dns_name: 'ec2-3-255-139-245.eu-west-1.compute.amazonaws.com'
     secrets: inherit
 
