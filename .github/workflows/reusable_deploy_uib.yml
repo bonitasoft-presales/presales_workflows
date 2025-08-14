@@ -51,6 +51,12 @@ jobs:
           UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
 
 
+      # Active les logs détaillés
+      - name: Enable step debug
+        run: echo "ACTIONS_STEP_DEBUG=true" >> $GITHUB_ENV
+
+
+
       - name: login
         id: loginBonita
         uses: fjogeleit/http-request-action@v1
