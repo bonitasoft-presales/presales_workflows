@@ -1,9 +1,6 @@
 name: testUIB
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "fix/deploy_UIB"
 
 jobs:
   deploy_UIB:
