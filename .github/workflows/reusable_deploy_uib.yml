@@ -106,7 +106,7 @@ jobs:
           url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import"
           method: 'POST'
           customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-          files: '{ "file": "${{ github.workspace }}/Team-Management.json" }'
+          files: '{ "file": "${{ github.workspace }}/uib/Team-Management.json" }'
           responseFile: "${{ github.workspace }}/response.json"
           ignoreStatusCodes: '500'
 
