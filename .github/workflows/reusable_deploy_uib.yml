@@ -82,7 +82,6 @@ jobs:
           
           echo "COOKIES=$cookie" >> $GITHUB_ENV
 
-
       - name: cleanup
         id: cleanup
         uses: fjogeleit/http-request-action@v1.16.4
@@ -91,48 +90,14 @@ jobs:
           method: 'DELETE'
           customHeaders: '{"x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
 
-
-      - name: Show cleanup Response
-        run: |
-          echo ${{ steps.cleanup.outputs.response }}
-          echo ${{ steps.cleanup.outputs.headers }}
-          echo ${{ steps.cleanup.outputs.status }}
-
-
-      - name: deployJson
-        id: deployJson
-        uses: fjogeleit/http-request-action@v1.16.4
-        with:
-          url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import"
-          method: 'POST'
-          customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-          files: '{ "file": "${{ github.workspace }}/uib/Team-Management.json" }'
-          responseFile: "${{ github.workspace }}/response.json"
-          ignoreStatusCodes: '500'
-
-      - name: Output responseFile
-        id: execution-response-file
-        run: |
-          cat ${{ github.workspace }}/response.json
-
-
-
-
-      - name: Show deploy Response
-        run: |
-          echo ${{ steps.deployJson.outputs.response }}
-          echo ${{ steps.deployJson.outputs.headers }}
-          echo ${{ steps.deployJson.outputs.status }}
-
-
-      - name: deploy
+      - name: deploy-zip
         id: deploy
         uses: fjogeleit/http-request-action@v1.16.4
         with:
           url: "http://${{ env.AWS_PUBLIC_DNS_HOSTNAME }}/uib/api/v1/applications/import-bulk"
           method: 'POST'
           customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-          file: ${{ env.ZIP_TO_DEPLOY }}
+          files: '{ "file": "${{ env.ZIP_TO_DEPLOY }}" }'
 
       - name: Show deploy Response
         run: |
