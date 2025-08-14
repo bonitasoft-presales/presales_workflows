@@ -107,6 +107,16 @@ jobs:
           method: 'POST'
           customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
           file: "${{ github.workspace }}/uib/Team-Management.json"
+          responseFile: "${{ github.workspace }}/response.json"
+          ignoreStatusCodes: '500'
+
+      - name: Output responseFile
+        id: execution-response-file
+        run: |
+          cat ${{ github.workspace }}/response.json
+
+
+
 
       - name: Show deploy Response
         run: |
