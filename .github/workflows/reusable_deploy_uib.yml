@@ -73,6 +73,7 @@ jobs:
           method: 'POST'
           customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
           files: '{ "file": "${{ env.ZIP_TO_DEPLOY }}" }'
+          timeout: 60000
 
       - name: Show deploy Response
         run: |
