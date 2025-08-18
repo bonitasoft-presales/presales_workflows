@@ -67,7 +67,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} << EOF
             ls -ltr ~/uib_applications.zip
               
-            curl -v -c "~/saved_cookies.txt" \
+            curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
               --url http://localhost/bonita/loginservice \
               --header 'Content-Type: application/x-www-form-urlencoded' \
               --data-urlencode 'username=install' \
@@ -80,10 +80,10 @@ jobs:
               
             #cleanup apps
             echo "clean all applications"
-            curl -v -b "~/saved_cookies.txt" -X DELETE "http://localhost/uib/api/v1/applications/all" \
+            curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "http://localhost/uib/api/v1/applications/all" \
             --header 'x-requested-by: Appsmith' \
               
-            ZIP_FILE="~/uib_applications.zip"
+            ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
             echo "deploy zip applications: ${ZIP_FILE}"
             
             # deploy all
@@ -91,7 +91,8 @@ jobs:
             --header 'x-requested-by: Appsmith' \
             --form "file=@${ZIP_FILE}"
           EOF
-
+        env:
+          UIB_FOLDER: "/home/${{ secrets.AWS_SSH_USER }}"
 #
 #      - name: login
 #        id: loginBonita
