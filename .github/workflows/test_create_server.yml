@@ -25,6 +25,10 @@ jobs:
         with:
           config: ${{ github.workspace }}/aws_instance.yaml
 
+      - name: display dns
+        run : |
+          echo "publicDnsName : ${{ steps.read-yaml-file.outputs['publicDnsName'] }}"
+  
 
   use_bonita_dns:
     runs-on: ubuntu-latest
