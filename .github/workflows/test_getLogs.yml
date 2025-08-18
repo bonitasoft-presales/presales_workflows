@@ -1,6 +1,9 @@
 name: test_get_bonita_logs
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - chore/bonita_logs
 jobs:
   get_bonita_logs:
     uses: ./.github/workflows/reusable_get_bonita_logs.yml
@@ -13,12 +16,12 @@ jobs:
     uses: ./.github/workflows/reusable_get_bonita_logs.yml
     with:
       bonita_dns_name: 'ec2-3-254-134-132.eu-west-1.compute.amazonaws.com'
-      bonita_service: 'bonita_ui'
+      bonita_service: 'bonita-ui'
     secrets: inherit
 
   get_bonita_ui_proxy_logs:
       uses: ./.github/workflows/reusable_get_bonita_logs.yml
       with:
         bonita_dns_name: 'ec2-3-254-134-132.eu-west-1.compute.amazonaws.com'
-        bonita_service: 'bonita_ui_proxy'
+        bonita_service: 'bonita-ui-proxy'
       secrets: inherit
