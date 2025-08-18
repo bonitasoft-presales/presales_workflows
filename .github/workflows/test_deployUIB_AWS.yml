@@ -1,4 +1,4 @@
-name: test_deploy_UIB
+name: test_deploy_UIB_AWS
 on:
   workflow_dispatch:
 jobs:
