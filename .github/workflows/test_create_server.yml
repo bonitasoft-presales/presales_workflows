@@ -26,7 +26,9 @@ jobs:
 
       - name: display dns
         run : |
-          echo "publicDnsName : ${{ steps.read-yaml-file.outputs['publicDnsName'] }}"
+          echo "publicDnsName : ${bonita_dns}"
+        env:
+          bonita_dns: ${{ steps.read-yaml-file.outputs['publicDnsName'] }}
   
 
   use_bonita_dns:
