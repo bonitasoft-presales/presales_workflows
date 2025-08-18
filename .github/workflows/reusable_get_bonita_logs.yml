@@ -1,0 +1,154 @@
+name: displayLogs
+on:
+  workflow_call:
+    inputs:
+      bonita_dns_name:
+        required: true
+        type: string
+        description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
+
+jobs:
+  display_bonitab_logs:
+    runs-on: ubuntu-latest
+    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#
+#      # comes from create server
+#      - name: Download artifact instance.yaml file
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: aws_instance
+#
+#      - name: read-yaml-file
+#        uses: pietrobolcato/action-read-yaml@1.1.0
+#        id: read-yaml-file
+#        with:
+#          config: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: set-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ inputs.bonita_dns_name }}" >> $GITHUB_ENV 
+
+      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: display-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
+
+#      - name: Extract licence
+#        run: |
+#          echo "${{ secrets.LICENCE_V10_2_BASE64 }}" | base64 --decode > ${{ github.workspace }}/bonita.lic
+#
+#      - name: Check licence
+#        run: |
+#          ls -ltr ${{ github.workspace }}/bonita.lic
+
+      - name: Setup SSH private key
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
+        with:
+          aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+          port_range: '22'
+
+#      - name: Transfer licence
+#        run: |
+#          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/bonita.lic ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita.lic
+#
+#      - name: Verify licence file
+#        run: |
+#          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+#              mkdir -p ~/sca/bonita_data_lic
+#              sudo chown -R ubuntu:ubuntu ~/sca/bonita_data_lic
+#              cp ~/bonita.lic ~/sca/bonita_data_lic
+#              ls -ltr ~/sca/bonita_data_lic
+#          '
+
+#      - name: Stop docker compose
+#        run: |
+#          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+#              sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
+#              sudo docker compose -f /home/ubuntu/sca/docker-compose.yml --env-file /home/ubuntu/sca/.env down -v
+#              sudo docker image rm bonita_sca:1.0
+#              sudo docker image rm bonita_uib:1.0
+#              sudo docker system prune --force --volumes --all
+#              df -h
+#              sudo docker images
+#              sudo docker logout https://bonitasoft.jfrog.io
+#          '
+
+#      - name: Configure env file for docker compose
+#        run: |
+#          echo "EC2_HOSTNAME=${AWS_PUBLIC_DNS_HOSTNAME}" > ${{ github.workspace }}/ec2.properties
+#          cat ${{ github.workspace }}/ec2.properties
+#          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/ec2.properties ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/ec2.properties
+#          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+#              source ~/ec2.properties
+#              echo "ec2 hostname: ${EC2_HOSTNAME}"
+#              echo "env file before sed:"
+#              cat /home/ubuntu/sca/.env
+#              sed -i "s/{EC2_PUBLIC_HOSTNAME}/${EC2_HOSTNAME}/g" /home/ubuntu/sca/.env
+#              echo "env file after sed:"
+#              cat /home/ubuntu/sca/.env
+#          '
+
+#      - name: Verify docker compose parsed
+#        run: |
+#          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+#              sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
+#              sudo docker image load -i ~/bonita_sca.tar
+#              sudo docker image load -i ~/uib/bonita_uib.tar
+#              sudo docker images
+#              sudo docker compose -f /home/ubuntu/sca/docker-compose.yml --env-file /home/ubuntu/sca/.env config
+#              sudo docker logout https://bonitasoft.jfrog.io
+#          '
+
+#      - name: Start docker compose
+#        run: |
+#          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+#              sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
+#              sudo docker images
+#              sudo docker compose -f /home/ubuntu/sca/docker-compose.yml --env-file /home/ubuntu/sca/.env up -d
+#              sudo docker logout https://bonitasoft.jfrog.io
+#          '
+#
+#      - name: Check HTTP status
+#        uses: laurentleseigneur/http-status-code@main
+#        with:
+#          url: "http://${AWS_PUBLIC_DNS_HOSTNAME}:8081/bonita/healthz"
+#          code: 200
+#          timeout: 360
+#          interval: 5
+#          username: ${{ secrets.HEALTHZ_USERNAME }}
+#          password: ${{ secrets.HEALTHZ_PASSWORD }}
+
+      - name: Display docker logs
+        if: always()
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo docker ps
+              sudo docker logs bonita
+          '
+        
+
+#      - name: Publish services URLs
+#        run: |
+#          echo "::notice:: Bonita reverse proxy: http://${AWS_PUBLIC_DNS_HOSTNAME}:${BONITA_PROXY_PORT}/bonita/"
+#          echo "::notice:: Bonita URL: http://${AWS_PUBLIC_DNS_HOSTNAME}:${BONITA_EXPOSED_PORT}/bonita/"
+#          echo "::notice:: Keycloak URL: http://${AWS_PUBLIC_DNS_HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
+#          echo "::notice:: Mail URL: :http://${AWS_PUBLIC_DNS_HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
+#        env:
+#          BONITA_EXPOSED_PORT: "8081"
+#          BONITA_PROXY_PORT: "80"
+#          ROUNDCUBE_EXPOSED_PORT: "8088"
+#          KEYCLOAK_EXPOSED_PORT: "8084"
