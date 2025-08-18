@@ -65,8 +65,6 @@ jobs:
       - name: Deploy UIB applications
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} << EOF
-            ls -ltr ~/uib_applications.zip
-              
             curl -v -c "${UIB_FOLDER}/saved_cookies.txt" \
               --url http://localhost/bonita/loginservice \
               --header 'Content-Type: application/x-www-form-urlencoded' \
@@ -75,21 +73,17 @@ jobs:
               --data-urlencode 'redirect=false' \
               --data-urlencode 'redirectURL='
               
-            echo "connected"
-            ls -ltr ~/saved_cookies.txt
+            echo " *** connected *** "
+            ls -ltr ${UIB_FOLDER}
               
-            #cleanup apps
-            echo "clean all applications"
+            echo " *** clean all applications *** "
             curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "http://localhost/uib/api/v1/applications/all" \
-            --header 'x-requested-by: Appsmith' \
+             --header 'x-requested-by: Appsmith' \
               
-            ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
-            echo "deploy zip applications: ${ZIP_FILE}"
-            
-            # deploy all
-              curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "http://localhost/uib/api/v1/applications/import-bulk" \
-            --header 'x-requested-by: Appsmith' \
-            --form "file=@${ZIP_FILE}"
+            echo " *** deploy all applications *** "
+            curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "http://localhost/uib/api/v1/applications/import-bulk" \
+             --header 'x-requested-by: Appsmith' \
+             --form "file=@${UIB_FOLDER}/uib_applications.zip"
           EOF
         env:
           UIB_FOLDER: "/home/${{ secrets.AWS_SSH_USER }}"
