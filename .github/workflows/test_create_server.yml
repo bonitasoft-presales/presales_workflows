@@ -1,7 +1,6 @@
 name: test_create_server
 on:
   workflow_dispatch:
-#  push:
 jobs:
   create_server:
     uses: ./.github/workflows/reusable_create_server.yml

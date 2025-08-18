@@ -1,12 +1,8 @@
-name: testUIB
+name: test_deploy_UIB
 on:
   workflow_dispatch:
-#  push:
-#    branches:
-#      - "fix/deploy_UIB"
 env:
   ZIP_TO_DEPLOY:
-
 jobs:
   fake_build:
     runs-on: ubuntu-latest
