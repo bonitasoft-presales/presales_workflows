@@ -1,8 +1,8 @@
-name: test_deploy_UIB_AWS
+name: test_get_bonita_logs
 on:
   workflow_dispatch:
 jobs:
-  deploy_UIB_AWS:
+  test_get_bonita_logs:
     uses: ./.github/workflows/reusable_get_bonita_logs.yml
     with:
       bonita_dns_name: 'ec2-3-254-134-132.eu-west-1.compute.amazonaws.com'
