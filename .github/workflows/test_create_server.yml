@@ -1,9 +1,10 @@
 name: test_create_server
 on:
   workflow_dispatch:
+  push:
 jobs:
   create_server:
-    uses: ./.github/workflows/reusable_create_server.yml@main
+    uses: ./.github/workflows/reusable_create_server.yml
     secrets: inherit
 
   set_bonita_dns:
@@ -23,8 +24,6 @@ jobs:
         id: read-yaml-file
         with:
           config: ${{ github.workspace }}/aws_instance.yaml
-
-
 
 
   use_bonita_dns:
