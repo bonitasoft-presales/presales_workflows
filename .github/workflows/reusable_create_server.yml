@@ -1,19 +1,15 @@
 name: createServer
 on:
   workflow_call:
-    outputs:
-      awsPublicDns: ${{ jobs.create_server.outputs.awsPublicDns }}
-
   workflow_dispatch:
-    outputs:
-      awsPublicDns: ${{ jobs.create_server.outputs.awsPublicDns }}
+
+env:
+  AWS_PUBLIC_DNS_HOSTNAME:
 
 jobs:
   create_server:
     id: create_server
     runs-on: ubuntu-latest
-    outputs:
-      awsPublicDns: ${{ steps.read-yaml.outputs.publicDnsName }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
