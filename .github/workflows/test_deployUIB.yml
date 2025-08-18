@@ -1,9 +1,9 @@
 name: test_deploy_UIB
 on:
   workflow_dispatch:
-env:
-  ZIP_TO_DEPLOY:
 jobs:
+  env:
+    ZIP_TO_DEPLOY:
   fake_build:
     runs-on: ubuntu-latest
     steps:
