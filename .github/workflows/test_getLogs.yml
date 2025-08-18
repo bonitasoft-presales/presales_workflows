@@ -1,9 +1,10 @@
 name: test_get_bonita_logs
 on:
   workflow_dispatch:
+env:
+  bonita_dns_name: 'ec2-3-254-134-132.eu-west-1.compute.amazonaws.com'
 jobs:
-  env:
-    bonita_dns_name: "bonita_dns_name"
+
   get_bonita_logs:
     uses: ./.github/workflows/reusable_get_bonita_logs.yml
     with:
