@@ -8,7 +8,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-  deploy_UIB:
+  deploy_UIB_AWS:
     needs:
       - fake_build
     uses: ./.github/workflows/reusable_deploy_uib_aws.yml

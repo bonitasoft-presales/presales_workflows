@@ -9,7 +9,7 @@ on:
 #NOTE: some time we get 502 Bad gateway errors
 #workaround: replay faild job
 jobs:
-  deploy_UIB:
+  deploy_UIB_AWS:
     runs-on: ubuntu-latest
     env:
       COOKIES:
@@ -58,7 +58,9 @@ jobs:
 
       - name: Transfer UIB data
         run: |
-          scp -o StrictHostKeyChecking=no -i private_key ZIP_TO_DEPLOY ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/uib_applications.zip
+          scp -o StrictHostKeyChecking=no -i private_key ${ZIP_FILE} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/uib_applications.zip
+        env:
+          ZIP_FILE: ${{ env.ZIP_TO_DEPLOY }}
 
       - name: Deploy UIB applications
         run: |
@@ -78,7 +80,7 @@ jobs:
               
             #cleanup apps
             echo "clean all applications"
-            curl -v -b "~/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
+            curl -v -b "~/saved_cookies.txt" -X DELETE "http://localhost/uib/api/v1/applications/all" \
             --header 'x-requested-by: Appsmith' \
               
             ZIP_FILE="~/uib_applications.zip"
@@ -89,6 +91,7 @@ jobs:
             --header 'x-requested-by: Appsmith' \
             --form "file=@${ZIP_FILE}"
             EOF
+        env:
 
 #
 #      - name: login
