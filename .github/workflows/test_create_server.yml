@@ -1,7 +1,7 @@
 name: test_create_server
 on:
   workflow_dispatch:
-  push:
+#  push:
 jobs:
   create_server:
     uses: ./.github/workflows/reusable_create_server.yml
@@ -35,7 +35,7 @@ jobs:
       - name: display AWS_PUBLIC_DNS_HOSTNAME result
         id: display-result
         run: |
-          echo "publicDnsName : ${{ steps.read-yaml-file.outputs['publicDnsName'] }}" 
+          echo "publicDnsName : ${{ needs.set_bonita_dns.publicDnsName }}" 
 
 
 
