@@ -1,0 +1,42 @@
+name: test_create_server
+on:
+  workflow_dispatch:
+jobs:
+  create_server:
+    uses: ./.github/workflows/reusable_create_server.yml@main
+    secrets: inherit
+
+  set_bonita_dns:
+    runs-on: ubuntu-latest
+    needs:
+      - create_server
+    outputs:
+      publicDnsName: ${{ steps.read-yaml-file.outputs['publicDnsName'] }}
+    steps:
+      - name: Download artifact instance.yaml file
+        uses: actions/download-artifact@v4
+        with:
+          name: aws_instance
+
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-file
+        with:
+          config: ${{ github.workspace }}/aws_instance.yaml
+
+
+
+
+  use_bonita_dns:
+    runs-on: ubuntu-latest
+    needs:
+      - create_server
+    steps:
+      - name: display AWS_PUBLIC_DNS_HOSTNAME result
+        id: display-result
+        run: |
+          echo "publicDnsName : ${{ steps.read-yaml-file.outputs['publicDnsName'] }}" 
+
+
+
+
