@@ -35,14 +35,14 @@ jobs:
       - name: Display docker ps
         if: always()
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name}} << EOF
               sudo docker ps
-          '
+          EOF
       - name: Display docker logs
         if: always()
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name} '
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name}} << EOF
               sudo docker logs ${{ inputs.bonita_service }} 
               #sudo docker logs ${{ inputs.bonita_service }} > ${{ inputs.bonita_service }}.log
-              
-          '
+          EOF
+          
