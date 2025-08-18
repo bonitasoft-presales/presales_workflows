@@ -37,10 +37,10 @@ jobs:
       - create_server
       - set_bonita_dns
     steps:
-      - name: display AWS_PUBLIC_DNS_HOSTNAME result
+      - name: display dns result
         id: display-result
         run: |
-          echo "publicDnsName : ${{ needs.set_bonita_dns.publicDnsName }}" 
+          echo "publicDnsName : ${{ needs.set_bonita_dns.outputs.publicDnsName }}" 
 
 
 
