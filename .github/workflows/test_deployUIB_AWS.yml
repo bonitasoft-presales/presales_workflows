@@ -2,15 +2,7 @@ name: test_deploy_UIB_AWS
 on:
   workflow_dispatch:
 jobs:
-  fake_build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-  deploy_UIB:
-    needs:
-      - fake_build
+  deploy_UIB_AWS:
     uses: ./.github/workflows/reusable_deploy_uib_aws.yml
     with:
       bonita_dns_name: 'ec2-3-254-134-132.eu-west-1.compute.amazonaws.com'

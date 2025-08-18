@@ -9,7 +9,7 @@ on:
 #NOTE: some time we get 502 Bad gateway errors
 #workaround: replay faild job
 jobs:
-  deploy_UIB:
+  deploy_UIB_AWS:
     runs-on: ubuntu-latest
     env:
       COOKIES:
@@ -58,14 +58,14 @@ jobs:
 
       - name: Transfer UIB data
         run: |
-          scp -o StrictHostKeyChecking=no -i private_key ZIP_TO_DEPLOY ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/uib_applications.zip
+          scp -o StrictHostKeyChecking=no -i private_key ${ZIP_FILE} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/uib_applications.zip
+        env:
+          ZIP_FILE: ${{ env.ZIP_TO_DEPLOY }}
 
       - name: Deploy UIB applications
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} << EOF
-            ls -ltr ~/uib_applications.zip
-              
-            curl -v -c "~/saved_cookies.txt" \
+            curl -c "${UIB_FOLDER}/saved_cookies.txt" \
               --url http://localhost/bonita/loginservice \
               --header 'Content-Type: application/x-www-form-urlencoded' \
               --data-urlencode 'username=install' \
@@ -73,69 +73,17 @@ jobs:
               --data-urlencode 'redirect=false' \
               --data-urlencode 'redirectURL='
               
-            echo "connected"
-            ls -ltr ~/saved_cookies.txt
+            echo " *** connected *** "
+            ls -ltr ${UIB_FOLDER}
               
-            #cleanup apps
-            echo "clean all applications"
-            curl -v -b "~/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
-            --header 'x-requested-by: Appsmith' \
+            echo " *** clean all applications *** "
+            curl -b "${UIB_FOLDER}/saved_cookies.txt" -X DELETE "http://localhost/uib/api/v1/applications/all" \
+             --header 'x-requested-by: Appsmith' \
               
-            ZIP_FILE="~/uib_applications.zip"
-            echo "deploy zip applications: ${ZIP_FILE}"
-            
-            # deploy all
-              curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "http://localhost/uib/api/v1/applications/import-bulk" \
-            --header 'x-requested-by: Appsmith' \
-            --form "file=@${ZIP_FILE}"
-            EOF
-
-#
-#      - name: login
-#        id: loginBonita
-#        uses: fjogeleit/http-request-action@v1.16.4
-#        with:
-#          url: "http://${{ inputs.bonita_dns_name }}/bonita/loginservice"
-#          method: 'POST'
-#          customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
-#          data: 'username=install&password=install&redirect=false&redirectURL='
-#
-#      - name: setup cookies from login Response
-#        run: |
-#          echo ${{ steps.loginBonita.outputs.response }}
-#          echo ${{ steps.loginBonita.outputs.headers }}
-#          echo ${{ steps.loginBonita.outputs.status }}
-#
-#          cookie=$(echo '${{ steps.loginBonita.outputs.headers }}' \
-#          | jq -r '."set-cookie"[]' \
-#          | cut -d';' -f1 \
-#          | tr '\n' '\r' \
-#          | sed 's/\r/; /g' \
-#          | sed 's/; $//')
-#          echo "*** ${cookie} ***"
-#
-#          echo "COOKIES=$cookie" >> $GITHUB_ENV
-#
-#      - name: cleanup
-#        id: cleanup
-#        uses: fjogeleit/http-request-action@v1.16.4
-#        with:
-#          url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/all"
-#          method: 'DELETE'
-#          customHeaders: '{"x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-#
-#      - name: deploy-zip
-#        id: deploy
-#        uses: fjogeleit/http-request-action@v1.16.4
-#        with:
-#          url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/import-bulk"
-#          method: 'POST'
-#          customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
-#          files: '{ "file": "${{ env.ZIP_TO_DEPLOY }}" }'
-#          timeout: 60000
-#
-#      - name: Show deploy Response
-#        run: |
-#          echo ${{ steps.deploy.outputs.response }}
-#          echo ${{ steps.deploy.outputs.headers }}
-#          echo ${{ steps.deploy.outputs.status }}
+            echo " *** deploy all applications *** "
+            curl -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "http://localhost/uib/api/v1/applications/import-bulk" \
+             --header 'x-requested-by: Appsmith' \
+             --form "file=@${UIB_FOLDER}/uib_applications.zip"
+          EOF
+        env:
+          UIB_FOLDER: "/home/${{ secrets.AWS_SSH_USER }}"
