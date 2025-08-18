@@ -1,9 +1,9 @@
 name: testUIB
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "fix/deploy_UIB"
+#  push:
+#    branches:
+#      - "fix/deploy_UIB"
 env:
   ZIP_TO_DEPLOY:
 
