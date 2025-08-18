@@ -90,8 +90,7 @@ jobs:
               curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "http://localhost/uib/api/v1/applications/import-bulk" \
             --header 'x-requested-by: Appsmith' \
             --form "file=@${ZIP_FILE}"
-            EOF
-        env:
+          EOF
 
 #
 #      - name: login
