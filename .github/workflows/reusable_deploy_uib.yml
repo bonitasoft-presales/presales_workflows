@@ -6,7 +6,8 @@ on:
         required: true
         type: string
         description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
-
+#NOTE: some time we get 502 Bad gateway errors
+#workaround: replay faild job
 jobs:
   deploy_UIB:
     runs-on: ubuntu-latest

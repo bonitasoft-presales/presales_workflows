@@ -1,0 +1,141 @@
+name: deployUibAws
+on:
+  workflow_call:
+    inputs:
+      bonita_dns_name:
+        required: true
+        type: string
+        description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
+#NOTE: some time we get 502 Bad gateway errors
+#workaround: replay faild job
+jobs:
+  deploy_UIB:
+    runs-on: ubuntu-latest
+    env:
+      COOKIES:
+      ZIP_TO_DEPLOY:
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: prepare UIB applications
+        id: zip-applications
+        run: |
+          rm -rf ${UIB_FOLDER}
+          mkdir -p ${UIB_FOLDER}
+          ls -ltr "${PROJECT_FOLDER}/uib"
+          find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
+          unzip -l "${UIB_FOLDER}/uib_applications.zip"
+          ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
+          echo "deploy zip applications: ${ZIP_FILE}"
+          echo "ZIP_TO_DEPLOY=${ZIP_FILE}" >> $GITHUB_ENV
+        env:
+          PROJECT_FOLDER: "${{ github.workspace }}"
+          UIB_FOLDER: "${{ github.workspace }}/temp_ui_builder"
+
+      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: set-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ inputs.bonita_dns_name }}" >> $GITHUB_ENV 
+
+
+      - name: Setup SSH private key
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
+        with:
+          aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+          port_range: '22'
+
+      - name: Transfer UIB data
+        run: |
+          scp -o StrictHostKeyChecking=no -i private_key ZIP_TO_DEPLOY ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/uib_applications.zip
+
+      - name: Deploy UIB applications
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} << EOF
+            ls -ltr ~/uib_applications.zip
+              
+            curl -v -c "~/saved_cookies.txt" \
+              --url http://localhost/bonita/loginservice \
+              --header 'Content-Type: application/x-www-form-urlencoded' \
+              --data-urlencode 'username=install' \
+              --data-urlencode 'password=install' \
+              --data-urlencode 'redirect=false' \
+              --data-urlencode 'redirectURL='
+              
+            echo "connected"
+            ls -ltr ~/saved_cookies.txt
+              
+            #cleanup apps
+            echo "clean all applications"
+            curl -v -b "~/saved_cookies.txt" -X DELETE "${UIB_URL}/applications/all" \
+            --header 'x-requested-by: Appsmith' \
+              
+            ZIP_FILE="~/uib_applications.zip"
+            echo "deploy zip applications: ${ZIP_FILE}"
+            
+            # deploy all
+              curl -v -b "${UIB_FOLDER}/saved_cookies.txt" -X POST "http://localhost/uib/api/v1/applications/import-bulk" \
+            --header 'x-requested-by: Appsmith' \
+            --form "file=@${ZIP_FILE}"
+            EOF
+
+#
+#      - name: login
+#        id: loginBonita
+#        uses: fjogeleit/http-request-action@v1.16.4
+#        with:
+#          url: "http://${{ inputs.bonita_dns_name }}/bonita/loginservice"
+#          method: 'POST'
+#          customHeaders: '{"Content-Type": "application/x-www-form-urlencoded"}'
+#          data: 'username=install&password=install&redirect=false&redirectURL='
+#
+#      - name: setup cookies from login Response
+#        run: |
+#          echo ${{ steps.loginBonita.outputs.response }}
+#          echo ${{ steps.loginBonita.outputs.headers }}
+#          echo ${{ steps.loginBonita.outputs.status }}
+#
+#          cookie=$(echo '${{ steps.loginBonita.outputs.headers }}' \
+#          | jq -r '."set-cookie"[]' \
+#          | cut -d';' -f1 \
+#          | tr '\n' '\r' \
+#          | sed 's/\r/; /g' \
+#          | sed 's/; $//')
+#          echo "*** ${cookie} ***"
+#
+#          echo "COOKIES=$cookie" >> $GITHUB_ENV
+#
+#      - name: cleanup
+#        id: cleanup
+#        uses: fjogeleit/http-request-action@v1.16.4
+#        with:
+#          url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/all"
+#          method: 'DELETE'
+#          customHeaders: '{"x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
+#
+#      - name: deploy-zip
+#        id: deploy
+#        uses: fjogeleit/http-request-action@v1.16.4
+#        with:
+#          url: "http://${{ inputs.bonita_dns_name }}/uib/api/v1/applications/import-bulk"
+#          method: 'POST'
+#          customHeaders: '{"Content-Type": " multipart/form-data","x-requested-by": "Appsmith", "Cookie":"${{ env.COOKIES }}"}'
+#          files: '{ "file": "${{ env.ZIP_TO_DEPLOY }}" }'
+#          timeout: 60000
+#
+#      - name: Show deploy Response
+#        run: |
+#          echo ${{ steps.deploy.outputs.response }}
+#          echo ${{ steps.deploy.outputs.headers }}
+#          echo ${{ steps.deploy.outputs.status }}
