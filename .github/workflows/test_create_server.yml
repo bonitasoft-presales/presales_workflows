@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - create_server
+      - set_bonita_dns
     steps:
       - name: display AWS_PUBLIC_DNS_HOSTNAME result
         id: display-result
