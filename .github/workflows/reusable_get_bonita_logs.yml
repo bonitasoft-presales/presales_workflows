@@ -9,10 +9,10 @@ on:
       bonita_service:
         required: true
         type: string
-        description: "docker comper service that we want to get logs. could be for example bonita, bonita, bonita-ui,bonita-ui-proxy"
+        description: "docker comper service that we want to get logs. example: bonita, bonita, bonita-ui,bonita-ui-proxy"
 
 jobs:
-  display_bonitab_logs:
+  display_bonita_logs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH private key
