@@ -12,7 +12,7 @@ jobs:
       bonita_service: 'bonita'
     secrets: inherit
 
-  get_bonita_logs:
+  get_bonita_db_logs:
     uses: ./.github/workflows/reusable_get_bonita_logs.yml
     with:
       bonita_dns_name: 'ec2-3-254-134-132.eu-west-1.compute.amazonaws.com'
