@@ -5,7 +5,7 @@ on:
       bonita_dns_name:
         required: true
         type: string
-        description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
+        description: "target server, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
       bonita_service:
         required: true
         type: string
@@ -43,16 +43,17 @@ jobs:
         if: always()
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name}} << EOF
-              sudo docker logs ${{ inputs.bonita_service }} > ${{ inputs.bonita_service }}.log
+              rm -f /home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log
+              sudo docker logs ${{ inputs.bonita_service }} > /home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log
               ls -ltr ${{ inputs.bonita_service }}.log
           EOF
-          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:${{ inputs.bonita_service }}.log ${{ github.workspace }}/${{ inputs.bonita_service }}.log
+          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log ${{ github.workspace }}/${{ inputs.bonita_service }}.log
 
       - name: "Archive artifact ${{ inputs.bonita_service }} log file"
         uses: actions/upload-artifact@v4
         with:
-          name: aws_instance
-          path: ${{ github.workspace }}/${{ inputs.bonita_service }}.log
+          name: "${{ inputs.bonita_service }}.log"
+          path: "${{ github.workspace }}/${{ inputs.bonita_service }}.log"
 
 
           
