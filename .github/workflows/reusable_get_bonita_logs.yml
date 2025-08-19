@@ -43,11 +43,10 @@ jobs:
         if: always()
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name}} << EOF
-              rm -f /home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log
               sudo docker logs ${{ inputs.bonita_service }} > /home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log
               ls -ltr ${{ inputs.bonita_service }}.log
           EOF
-          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log ${{ github.workspace }}/${{ inputs.bonita_service }}.log
+          scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name }}:/home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log ${{ github.workspace }}/${{ inputs.bonita_service }}.log
 
       - name: "Archive artifact ${{ inputs.bonita_service }} log file"
         uses: actions/upload-artifact@v4
