@@ -157,23 +157,21 @@ jobs:
           pwd
           echo "Listing files in current directory before scp:"
           ls -latr
+          echo "Listing files in current directory infrastructure/sca:"
+          ls -latr infrastructure/sca
           echo "End of file listing."
           
 
       - name: Transfer Docker Data
         run: |
-          scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
-          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~
-          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca/.env
-          
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo chown -R ubuntu:ubuntu ~/sca
               sudo rm -rf ~/sca
               sudo mkdir -p ~/sca
-              sudo mv /tmp/bonita_sca.tar ~/bonita_sca.tar
-              sudo mv /tmp/sca/* ~/sca
-              sudo mv /tmp/.env ~/sca/.env
           '
+          scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
+          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca
+          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca/.env
           
       - name: Verify .env file on remote server
         if: always()
