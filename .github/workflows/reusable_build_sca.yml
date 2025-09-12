@@ -155,8 +155,8 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo chown -R ubuntu:ubuntu ~/sca
-              rm -rf ~/sca
-              mkdir -p ~/sca
+              sudo rm -rf ~/sca
+              sudo mkdir -p ~/sca
           '
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~
