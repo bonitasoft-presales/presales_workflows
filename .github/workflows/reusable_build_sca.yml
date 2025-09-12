@@ -173,3 +173,25 @@ jobs:
           '
         env:
           AWS_PUBLIC_DNS_HOSTNAME: ${{ env.AWS_PUBLIC_DNS_HOSTNAME }}
+          
+      - name: Verify .env file on remote server
+        if: always()
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              echo "--- Verifying .env existence in ~/sca/ ---"
+              if [ -f ~/sca/.env ]; then
+                  echo "✅ The .env file exists."
+                  echo "--- Contents of .env ---"
+                  cat ~/sca/.env
+              else
+                  echo "❌ The .env file was NOT found."
+              fi
+              echo "--- Files in /home ---"
+              ls -latr /home
+              echo "--- Files in /home/bonita/sca ---"
+              ls -latr /home/bonita/sca
+              echo "--- Contents of docker-compose.yml ---"
+              cat /home/bonita/sca/docker-compose.yml
+          '
+        env:
+          AWS_PUBLIC_DNS_HOSTNAME: ${{ env.AWS_PUBLIC_DNS_HOSTNAME }}
