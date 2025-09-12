@@ -154,7 +154,7 @@ jobs:
       - name: Debug Transfer Data
         run: |
           echo "Listing files in current directory before scp:"
-          ls -ltr
+          ls -latr
           echo "End of file listing."
 
       - name: Transfer Docker Data
