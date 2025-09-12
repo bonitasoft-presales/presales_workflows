@@ -72,7 +72,18 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
-              sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env down -v
+              
+              if [ -f ~/sca/docker-compose.yml ]; then
+                  echo "✅ The docker-compose.yml file exists in /sca."
+                  sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env down -v
+              else
+                  echo "❌ The docker-compose.yml file was NOT found in /sca."
+                  if [ -f ~/sca/sca/docker-compose.yml ]; then
+                      sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/.env down -v
+                  else
+                      echo "❌ The docker-compose.yml file was NOT found."
+                  fi
+              fi
               sudo docker image rm bonita_sca:1.0
               sudo docker image rm bonita_uib:1.0
               sudo docker system prune --force --volumes --all
@@ -103,7 +114,18 @@ jobs:
               sudo docker image load -i ~/bonita_sca.tar
               sudo docker image load -i ~/uib/bonita_uib.tar
               sudo docker images
-              sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env config
+              
+              if [ -f ~/sca/docker-compose.yml ]; then
+                  echo "✅ The docker-compose.yml file exists in /sca."
+                  sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env config
+              else
+                  echo "❌ The docker-compose.yml file was NOT found in /sca."
+                  if [ -f ~/sca/sca/docker-compose.yml ]; then
+                      sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/.env config
+                  else
+                      echo "❌ The docker-compose.yml file was NOT found."
+                  fi
+              fi
               sudo docker logout https://bonitasoft.jfrog.io
           '
 
@@ -113,6 +135,17 @@ jobs:
               sudo docker login https://bonitasoft.jfrog.io -u ${{ secrets.JFROG_USER }} -p ${{ secrets.JFROG_TOKEN }}
               sudo docker images
               sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env up -d
+              if [ -f ~/sca/docker-compose.yml ]; then
+                  echo "✅ The docker-compose.yml file exists in /sca."
+                  sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env up -d
+              else
+                  echo "❌ The docker-compose.yml file was NOT found in /sca."
+                  if [ -f ~/sca/sca/docker-compose.yml ]; then
+                      sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/.env up -d
+                  else
+                      echo "❌ The docker-compose.yml file was NOT found."
+                  fi
+              fi
               sudo docker logout https://bonitasoft.jfrog.io
           '
 
