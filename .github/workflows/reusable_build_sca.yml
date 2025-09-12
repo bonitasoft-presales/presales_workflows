@@ -162,7 +162,7 @@ jobs:
           echo "End of file listing."
           
 
-      - name: Transfer Docker Data
+      - name: Transfer Docker Data - Step 1 - Listing files in remote directory sca
         run: |
           echo "Listing files in remote directory sca:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
@@ -174,6 +174,9 @@ jobs:
           '
           echo "Listing files in current directory infrastructure/sca:"
           ls -latr infrastructure/sca
+
+      - name: Transfer Docker Data - Step 2 - Move bonita_sca.tar in ~/ 
+        run: |
           
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
           echo "Move bonita_sca.tar in ~/ and show:"
@@ -181,18 +184,25 @@ jobs:
               sudo chown -R ubuntu:ubuntu ~/bonita_sca.tar
               ls -latr ~/
           '
+          
+      - name: Transfer Docker Data - Step 3 - Move folder sca in ~/sca  
+        run: |
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca/ ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca
           echo "Move folder sca in ~/sca and show:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo chown -R ubuntu:ubuntu ~/sca
               ls -latr ~/sca
           '
+          
+      - name: Transfer Docker Data - Step 4 - Move .env in ~/sca 
+        run: |
           scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca/.env
-           echo "Move .env in ~/sca and show:"
+          echo "Move .env in ~/sca and show:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo chown -R ubuntu:ubuntu ~/sca/.env
               ls -latr ~/sca
           '
+          
       - name: Verify .env file on remote server
         if: always()
         run: |
