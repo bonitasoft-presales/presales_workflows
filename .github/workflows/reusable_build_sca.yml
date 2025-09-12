@@ -173,34 +173,26 @@ jobs:
           '
           echo "Listing files in current directory infrastructure/sca:"
           ls -latr infrastructure/sca
+          
+      - name: Transfer Docker Data - Step 2
+        run: |
+          echo "# 1. Copy the files to a temporary directory on the server."
+          scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/bonita_sca.tar
+          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/
+          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/.env
+          
+          echo "# 2.  Log in and use sudo to move the files to their final destination."
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo rm -rf /home/bonita/sca
+              sudo mkdir -p /home/bonita/sca
+              sudo mv /tmp/bonita_sca.tar /home/bonita/bonita_sca.tar
+              sudo mv /tmp/sca/* /home/bonita/sca/sca
+              sudo mv /tmp/.env /home/bonita/sca/.env
+              sudo chown -R bonita:bonita /home/bonita/sca
+          '
+        env:
+          AWS_PUBLIC_DNS_HOSTNAME: ${{ env.AWS_PUBLIC_DNS_HOSTNAME }}
 
-      - name: Transfer Docker Data - Step 2 - Move bonita_sca.tar in ~/ 
-        run: |
-          
-          scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
-          echo "Move bonita_sca.tar in ~/ and show:"
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo chown -R ubuntu:ubuntu ~/bonita_sca.tar
-              ls -latr ~/
-          '
-          
-      - name: Transfer Docker Data - Step 3 - Move folder sca in ~/sca  
-        run: |
-          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca/ ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca
-          echo "Move folder sca in ~/sca and show:"
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo chown -R ubuntu:ubuntu ~/sca
-              ls -latr ~/sca
-          '
-          
-      - name: Transfer Docker Data - Step 4 - Move .env in ~/sca 
-        run: |
-          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca/.env
-          echo "Move .env in ~/sca and show:"
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo chown -R ubuntu:ubuntu ~/sca/.env
-              ls -latr ~/sca
-          '
           
       - name: Verify .env file on remote server
         if: always()
