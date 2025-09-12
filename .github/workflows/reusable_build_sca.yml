@@ -153,26 +153,22 @@ jobs:
 
       - name: Debug Transfer Data
         run: |
+          echo "Listing files with pwd:"
+          pwd
           echo "Listing files in current directory before scp:"
           ls -latr
           echo "End of file listing."
+          
 
       - name: Transfer Docker Data
         run: |
-          scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/bonita_sca.tar
-          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/
-          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/.env
-          
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo rm -rf /home/bonita/sca
-              sudo mkdir -p /home/bonita/sca
-              sudo mv /tmp/bonita_sca.tar /home/bonita/bonita_sca.tar
-              sudo mv /tmp/sca/* /home/bonita/sca
-              sudo mv /tmp/.env /home/bonita/sca/.env
-              sudo chown -R bonita:bonita /home/bonita/sca
+              sudo chown -R ubuntu:ubuntu ~/sca
+              sudo rm -rf ~/sca
+              sudo mkdir -p ~/sca
           '
-        env:
-          AWS_PUBLIC_DNS_HOSTNAME: ${{ env.AWS_PUBLIC_DNS_HOSTNAME }}
+          scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
+          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~
           
       - name: Verify .env file on remote server
         if: always()
@@ -189,9 +185,9 @@ jobs:
               echo "--- Files in /home ---"
               ls -latr /home
               echo "--- Files in /home/bonita/sca ---"
-              ls -latr /home/bonita/sca
+              ls -latr ~/sca
               echo "--- Contents of docker-compose.yml ---"
-              cat /home/bonita/sca/docker-compose.yml
+              cat ~/sca/docker-compose.yml
           '
         env:
           AWS_PUBLIC_DNS_HOSTNAME: ${{ env.AWS_PUBLIC_DNS_HOSTNAME }}
