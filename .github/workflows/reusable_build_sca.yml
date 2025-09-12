@@ -180,7 +180,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               ls -latr ~/
           '
-          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/
+          scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca/ ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca
           echo "Move folder sca in ~/sca and show:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               ls -latr ~/sca
@@ -207,7 +207,7 @@ jobs:
               echo "--- Files in ~/sca ---"
               ls -latr ~/sca
               echo "--- Verifying docker-compose.yml existence in ~/sca/ ---"
-              if [ -f ~/sca/.env ]; then
+              if [ -f ~/sca/docker-compose.yml ]; then
                   echo "✅ The docker-compose.yml file exists."
                   echo "--- Contents of docker-compose.yml ---"
                   cat ~/sca/docker-compose.yml
