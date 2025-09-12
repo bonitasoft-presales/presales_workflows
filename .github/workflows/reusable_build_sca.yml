@@ -161,6 +161,6 @@ jobs:
               sudo mkdir -p /home/bonita/sca
               sudo mv /tmp/bonita_sca.tar /home/bonita/bonita_sca.tar
               sudo mv /tmp/sca/* /home/bonita/sca
-              sudo chown -R bonita:bonita /home/bonita/sca
+              sudo chown -R ubuntu:ubuntu /home/bonita/sca
           '
 
