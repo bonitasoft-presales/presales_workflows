@@ -206,6 +206,12 @@ jobs:
               ls -latr /home
               echo "--- Files in ~/sca ---"
               ls -latr ~/sca
-              echo "--- Contents of docker-compose.yml ---"
-              cat ~/sca/docker-compose.yml
+              echo "--- Verifying docker-compose.yml existence in ~/sca/ ---"
+              if [ -f ~/sca/.env ]; then
+                  echo "✅ The docker-compose.yml file exists."
+                  echo "--- Contents of docker-compose.yml ---"
+                  cat ~/sca/docker-compose.yml
+              else
+                  echo "❌ The docker-compose.yml file was NOT found."
+              fi
           '
