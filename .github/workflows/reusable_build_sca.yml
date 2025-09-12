@@ -155,12 +155,14 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/bonita_sca.tar
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/
+          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/.env
 
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo rm -rf /home/bonita/sca
               sudo mkdir -p /home/bonita/sca
               sudo mv /tmp/bonita_sca.tar /home/bonita/bonita_sca.tar
               sudo mv /tmp/sca/* /home/bonita/sca
+              sudo mv /tmp/.env /home/bonita/sca/.env
               sudo chown -R ubuntu:ubuntu /home/bonita/sca
           '
 
