@@ -178,16 +178,19 @@ jobs:
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
           echo "Move bonita_sca.tar in ~/ and show:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo chown -R ubuntu:ubuntu ~/bonita_sca.tar
               ls -latr ~/
           '
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca/ ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca
           echo "Move folder sca in ~/sca and show:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo chown -R ubuntu:ubuntu ~/sca
               ls -latr ~/sca
           '
           scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca/.env
            echo "Move .env in ~/sca and show:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo chown -R ubuntu:ubuntu ~/sca/.env
               ls -latr ~/sca
           '
       - name: Verify .env file on remote server
