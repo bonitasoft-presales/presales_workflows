@@ -214,4 +214,12 @@ jobs:
               else
                   echo "❌ The docker-compose.yml file was NOT found."
               fi
+               echo "--- Verifying docker-compose.yml existence in ~/sca/sca/ ---"
+              if [ -f ~/sca/sca/docker-compose.yml ]; then
+                  echo "✅ The docker-compose.yml file exists."
+                  echo "--- Contents of docker-compose.yml ---"
+                  cat ~/sca/sca/docker-compose.yml
+              else
+                  echo "❌ The docker-compose.yml file was NOT found."
+              fi
           '
