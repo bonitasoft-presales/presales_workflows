@@ -166,10 +166,10 @@ jobs:
         run: |
           echo "Listing files in remote directory sca:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo chown -R ubuntu:ubuntu ~/sca
               sudo rm -rf ~/sca
               sudo mkdir -p ~/sca
               ls -latr
+              sudo chown -R ubuntu:ubuntu ~/sca
           '
           echo "Listing files in current directory infrastructure/sca:"
           ls -latr infrastructure/sca
