@@ -154,6 +154,7 @@ jobs:
       - name: Transfer Docker Data
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo chown -R ubuntu:ubuntu ~/sca
               rm -rf ~/sca
               mkdir -p ~/sca
           '
