@@ -186,9 +186,9 @@ jobs:
               sudo rm -rf /home/bonita/sca
               sudo mkdir -p /home/bonita/sca
               sudo mv /tmp/bonita_sca.tar /home/bonita/bonita_sca.tar
-              sudo mv /tmp/sca/* /home/bonita/sca/sca
+              sudo mv /tmp/sca/* /home/bonita/sca
               sudo mv /tmp/.env /home/bonita/sca/.env
-              sudo chown -R bonita:bonita /home/bonita/sca
+              sudo chown -R ubuntu:ubuntu /home/bonita/sca
           '
         env:
           AWS_PUBLIC_DNS_HOSTNAME: ${{ env.AWS_PUBLIC_DNS_HOSTNAME }}
