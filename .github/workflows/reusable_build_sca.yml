@@ -164,11 +164,16 @@ jobs:
 
       - name: Transfer Docker Data
         run: |
+          echo "Listing files in remote directory sca:"
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
               sudo chown -R ubuntu:ubuntu ~/sca
               sudo rm -rf ~/sca
               sudo mkdir -p ~/sca
+              ls -latr
           '
+          echo "Listing files in current directory infrastructure/sca:"
+          ls -latr infrastructure/sca
+          
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca
           scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/sca/.env
