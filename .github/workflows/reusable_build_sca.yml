@@ -169,7 +169,6 @@ jobs:
               sudo chown -R ubuntu:ubuntu ~/sca
               sudo rm -rf ~/sca
               sudo mkdir -p ~/sca
-              sudo chown -R ubuntu:ubuntu ~/sca
               ls -latr
           '
           echo "Listing files in current directory infrastructure/sca:"
