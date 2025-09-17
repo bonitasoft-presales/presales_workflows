@@ -160,21 +160,9 @@ jobs:
           echo "Listing files in current directory infrastructure/sca:"
           ls -latr infrastructure/sca
           echo "End of file listing."
-          
 
-      - name: Transfer Docker Data - Step 1 - Listing files in remote directory sca
-        run: |
-          echo "Listing files in remote directory sca:"
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo rm -rf ~/sca
-              sudo mkdir -p ~/sca
-              ls -latr
-              sudo chown -R ubuntu:ubuntu ~/sca
-          '
-          echo "Listing files in current directory infrastructure/sca:"
-          ls -latr infrastructure/sca
           
-      - name: Transfer Docker Data - Step 2
+      - name: Transfer Docker Data
         run: |
           echo "# 1. Copy the files to a temporary directory on the server."
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/bonita_sca.tar
