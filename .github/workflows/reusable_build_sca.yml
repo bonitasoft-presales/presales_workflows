@@ -190,43 +190,4 @@ jobs:
               sudo mv /tmp/.env ~/sca/.env
               sudo chown -R ubuntu:ubuntu ~/sca
           '
-          
-      - name: Verify .env file on remote server
-        if: always()
-        run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              echo "--- Verifying .env existence in ~/sca/ ---"
-              if [ -f ~/sca/.env ]; then
-                  echo "✅ The ~/sca/.env file exists."
-                  echo "--- Contents of .env ---"
-                  cat ~/sca/.env
-              else
-                  if [ -f ~/sca/sca/.env ]; then
-                    echo "✅ The ~/sca/sca/.env file exists."
-                    echo "--- Contents of .env ---"
-                    cat ~/sca/sca/.env
-                else
-                    echo "❌ The .env file was NOT found."
-                fi
-              fi
-              echo "--- Files in /home ---"
-              ls -latr /home
-              echo "--- Files in ~/sca ---"
-              ls -latr ~/sca
-              echo "--- Verifying docker-compose.yml existence in ~/sca/ ---"
-              if [ -f ~/sca/docker-compose.yml ]; then
-                  echo "✅ The ~/sca/docker-compose.yml file exists."
-                  echo "--- Contents of docker-compose.yml ---"
-                  cat ~/sca/docker-compose.yml
-              else            
-                  echo "--- Verifying docker-compose.yml existence in ~/sca/sca/ ---"
-                  if [ -f ~/sca/sca/docker-compose.yml ]; then
-                      echo "✅ The ~/sca/sca/docker-compose.yml file exists."
-                      echo "--- Contents of docker-compose.yml ---"
-                      cat ~/sca/sca/docker-compose.yml
-                  else
-                      echo "❌ The docker-compose.yml file was NOT found."
-                  fi
-              fi
-              
-          '
+
