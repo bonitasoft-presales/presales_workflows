@@ -53,12 +53,7 @@ jobs:
       - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
         with:
           aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
-          port_range: '22'
-          
-      - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
-        with:
-          aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
-          port_range: '8089'
+          port_range: '22, 8089'
 
       - name: Transfer licence
         run: |
