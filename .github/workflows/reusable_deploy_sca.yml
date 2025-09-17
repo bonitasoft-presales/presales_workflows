@@ -77,8 +77,8 @@ jobs:
                   sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env down -v
               else
                   if [ -f ~/sca/sca/docker-compose.yml ]; then
-                    echo "✅ The docker-compose.yml file exists in /sca."
-                    sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/.env down -v
+                    echo "✅ The docker-compose.yml file exists in /sca/sca/."
+                    sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/sca/.env down -v
                 else
                     echo "❌ The docker-compose.yml file was NOT found."
                 fi
@@ -119,8 +119,8 @@ jobs:
                   sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env config
               else
                   if [ -f ~/sca/sca/docker-compose.yml ]; then
-                    echo "✅ The docker-compose.yml file exists in /sca."
-                    sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/.env config
+                    echo "✅ The docker-compose.yml file exists in /sca/sca/."
+                    sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/sca/.env config
                 else
                     echo "❌ The docker-compose.yml file was NOT found."
                 fi
@@ -138,8 +138,8 @@ jobs:
                   sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env up -d
               else
                   if [ -f ~/sca/sca/docker-compose.yml ]; then
-                    echo "✅ The docker-compose.yml file exists in /sca."
-                    sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/.env up -d
+                    echo "✅ The docker-compose.yml file exists in /sca/sca/."
+                    sudo docker compose -f ~/sca/sca/docker-compose.yml --env-file ~/sca/sca/.env up -d
                 else
                     echo "❌ The docker-compose.yml file was NOT found."
                 fi
