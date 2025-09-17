@@ -151,16 +151,6 @@ jobs:
         run: |
           echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
 
-      - name: Debug Transfer Data
-        run: |
-          echo "Listing files with pwd:"
-          pwd
-          echo "Listing files in current directory before scp:"
-          ls -latr
-          echo "Listing files in current directory infrastructure/sca:"
-          ls -latr infrastructure/sca
-          echo "End of file listing."
-
           
       - name: Transfer Docker Data
         run: |
