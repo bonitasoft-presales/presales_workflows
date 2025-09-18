@@ -144,6 +144,7 @@ jobs:
               ls -latr ~/sca
               if [ -f ~/sca/superset-init.sh ]; then
                   echo "✅ The superset-init.yml file exists in /sca."
+                  sudo chmod +x ~/sca/superset-init.sh
                   sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env run --rm superset ~/sca/superset-init.sh
               else
                   echo "❌ The superset-init.yml file was NOT found."
