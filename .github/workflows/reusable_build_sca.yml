@@ -170,5 +170,6 @@ jobs:
               sudo mv /tmp/.env ~/sca/.env
               sudo mv /tmp/superset-init.sh ~/sca/superset-init.sh
               sudo chown -R ubuntu:ubuntu ~/sca
+              sudo chmod +x ~/sca/superset-init.sh
           '
 
