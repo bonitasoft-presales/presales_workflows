@@ -137,6 +137,12 @@ jobs:
               sudo docker logout https://bonitasoft.jfrog.io
           '
 
+      - name: Initialize Superset
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo docker compose --env-file ~/sca/.env run --rm superset /app/superset-init.sh
+          '
+
       - name: Check HTTP status
         uses: laurentleseigneur/http-status-code@main
         with:
