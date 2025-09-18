@@ -140,7 +140,14 @@ jobs:
       - name: Initialize Superset
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              sudo docker compose --env-file ~/sca/.env run --rm superset ~/sca/superset-init.sh
+              echo "--- Files in ~/sca ---"
+              ls -latr ~/sca
+              if [ -f ~/sca/superset-init.sh ]; then
+                  echo "✅ The superset-init.yml file exists in /sca."
+                  sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env run --rm superset ~/sca/superset-init.sh
+              else
+                  echo "❌ The docker-compose.yml file was NOT found."
+              fi
           '
 
       - name: Check HTTP status
