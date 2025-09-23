@@ -155,11 +155,9 @@ jobs:
       - name: Transfer Docker Data
         run: |
           echo "# 1. Copy the files to a temporary directory on the server."
-          chmod +x infrastructure/sca/superset-init.sh          
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/bonita_sca.tar
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/
           scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/.env ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/.env
-          scp -o StrictHostKeyChecking=no -i private_key infrastructure/sca/superset-init.sh ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/superset-init.sh
           
           echo "# 2.  Log in and use sudo to move the files to their final destination."
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
@@ -168,8 +166,6 @@ jobs:
               sudo mv /tmp/bonita_sca.tar ~/bonita_sca.tar
               sudo mv /tmp/sca/* ~/sca
               sudo mv /tmp/.env ~/sca/.env
-              sudo mv /tmp/superset-init.sh ~/sca/superset-init.sh
               sudo chown -R ubuntu:ubuntu ~/sca
-              sudo chmod +x ~/sca/superset-init.sh
           '
 
