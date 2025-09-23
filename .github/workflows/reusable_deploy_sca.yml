@@ -136,24 +136,6 @@ jobs:
               fi
               sudo docker logout https://bonitasoft.jfrog.io
           '
-
-      - name: Initialize Superset
-        run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
-              echo "--- Files in ~/sca ---"
-              ls -latr ~/sca
-              if [ -f ~/sca/superset-init.sh ]; then
-                  echo "✅ The superset-init.yml file exists in /sca."
-                  sudo chmod +x ~/sca/superset-init.sh
-                  echo "--- Verifying the initialisation script in the Superset container ---"
-                  sudo docker exec -it superset ls -latr /app
-                  echo "--- Execution the initialisation script in the Superset container ---"
-                  sudo docker compose -f ~/sca/docker-compose.yml --env-file ~/sca/.env run --rm superset /app/superset-init.sh
-              else
-                  echo "❌ The superset-init.yml file was NOT found."
-              fi
-          '
-
       - name: Check HTTP status
         uses: laurentleseigneur/http-status-code@main
         with:
@@ -178,10 +160,8 @@ jobs:
           echo "::notice:: Bonita URL: http://${AWS_PUBLIC_DNS_HOSTNAME}:${BONITA_EXPOSED_PORT}/bonita/"
           echo "::notice:: Keycloak URL: http://${AWS_PUBLIC_DNS_HOSTNAME}:${KEYCLOAK_EXPOSED_PORT}"
           echo "::notice:: Mail URL: :http://${AWS_PUBLIC_DNS_HOSTNAME}:${ROUNDCUBE_EXPOSED_PORT}"
-          echo "::notice:: Superset URL: :http://${AWS_PUBLIC_DNS_HOSTNAME}:${SUPERSET_EXPOSED_PORT}"
         env:
           BONITA_EXPOSED_PORT: "8081"
           BONITA_PROXY_PORT: "80"
           ROUNDCUBE_EXPOSED_PORT: "8088"
           KEYCLOAK_EXPOSED_PORT: "8084"
-          SUPERSET_EXPOSED_PORT: "8089"
