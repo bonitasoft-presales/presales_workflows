@@ -1,0 +1,189 @@
+name: build
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - main
+  pull_request:
+    branches:
+      - develop
+      - master
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre_requisites:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.1.0
+    secrets: inherit
+
+  # ========================================================================
+  # CONFIGURAR SERVIDOR SMTP (NUEVO)
+  # ========================================================================
+  setup_smtp:
+    name: Setup SMTP Server
+    uses: ./.github/workflows/reusable_setup_smtp.yml
+    secrets:
+      SMTP_USER_EMAIL: ${{ secrets.SMTP_USER_EMAIL }}
+      SMTP_USER_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+    with:
+      smtp_domain: example.com
+      smtp_hostname: mail.example.com
+
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.1.0
+    secrets: inherit
+
+  set_bonita_dns:
+    runs-on: ubuntu-latest
+    needs:
+      - create_server
+    outputs:
+      publicDnsName: ${{ steps.read-yaml-file.outputs['publicDnsName'] }}
+    steps:
+      - name: Download artifact instance.yaml file
+        uses: actions/download-artifact@v4
+        with:
+          name: aws_instance
+
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml-file
+        with:
+          config: ${{ github.workspace }}/aws_instance.yaml
+
+#      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+#        id: set-env-variable
+#        run: |
+#          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV
+
+      - name: display AWS_PUBLIC_DNS_HOSTNAME result
+        id: display-env-variable
+        run: |
+          echo "publicDnsName : ${{ steps.read-yaml-file.outputs['publicDnsName'] }}" 
+
+  build_sca:
+    needs:
+      - create_server
+      - set_bonita_dns
+      - setup_smtp  # ← Añadida dependencia de SMTP
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@develop-endika
+    secrets: inherit
+
+  deploy_SCA:
+    needs:
+      - create_server
+      - set_bonita_dns
+      - build_sca
+      - setup_smtp  # ← Añadida dependencia de SMTP
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@develop-endika
+    secrets: inherit
+
+  # ========================================================================
+  # DEPLOY SMTP EN SERVIDOR REMOTO AWS
+  # ========================================================================
+  deploy_smtp_to_server:
+    name: Deploy SMTP Server to AWS
+    runs-on: ubuntu-latest
+    needs:
+      - create_server
+      - set_bonita_dns
+      - setup_smtp
+    env:
+      AWS_PUBLIC_DNS_HOSTNAME: ${{ needs.set_bonita_dns.outputs.publicDnsName }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download SMTP configuration
+        uses: actions/download-artifact@v4
+        with:
+          name: bonita-smtp-config
+
+      - name: setup SSH private key
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+
+      - name: Copy Docker Compose files to server
+        run: |
+          echo "📦 Copying Docker Mailserver configuration..."
+          scp -o StrictHostKeyChecking=no -i private_key \
+            infrastructure/sca/docker-compose-mail-dms.yml \
+            ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:/tmp/
+
+      - name: Start Docker Mailserver on AWS
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key \
+            ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              cd /tmp
+              sudo docker compose -f docker-compose-mail-dms.yml up -d
+              echo "⏳ Waiting for Docker Mailserver to start..."
+              sleep 30
+
+              # Obtener el ID del contenedor
+              CONTAINER_ID=$(sudo docker ps --filter "name=mailserver" --format "{{.ID}}")
+
+              # Crear usuario SMTP
+              echo "👤 Creating SMTP user..."
+              sudo docker exec $CONTAINER_ID setup email add ${{ secrets.SMTP_USER_EMAIL }} ${{ secrets.SMTP_PASSWORD }}
+
+              # Verificar el usuario
+              sudo docker exec $CONTAINER_ID setup email list
+
+              # Verificar que el servicio está corriendo
+              sudo docker ps | grep mailserver
+
+              echo "✅ Docker Mailserver deployed and configured!"
+          '
+
+      - name: Configure Bonita to use SMTP
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key \
+            ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              # Crear archivo de configuración para Bonita
+              cat > /tmp/bonita-smtp-env.sh << EOF
+          export BONITA_SMTP_HOST=mailserver
+          export BONITA_SMTP_PORT=587
+          export BONITA_SMTP_USER=${{ secrets.SMTP_USER_EMAIL }}
+          export BONITA_SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          export BONITA_SMTP_TLS=true
+          export BONITA_SMTP_AUTH=true
+          EOF
+
+              echo "✅ Bonita SMTP environment variables configured"
+              cat /tmp/bonita-smtp-env.sh
+          '
+
+  deploy_UIB:
+    needs:
+      - create_server
+      - set_bonita_dns
+      - deploy_SCA
+      - deploy_smtp_to_server  
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.1.0
+    with:
+      bonita_dns_name: ${{ needs.set_bonita_dns.outputs.publicDnsName }}
+    secrets: inherit
+
+  run-IT:
+    needs:
+      - pre_requisites
+      - deploy_SCA
+      - deploy_UIB
+      - create_server
+      - deploy_smtp_to_server  
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.1.0
+    secrets: inherit
+
+  run-Datagen:
+    needs:
+      - pre_requisites
+      - run-IT
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.1.0
+    secrets: inherit
