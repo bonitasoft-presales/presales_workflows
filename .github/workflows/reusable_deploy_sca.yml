@@ -1,7 +1,7 @@
 name: deploySca
 on:
   workflow_call:
-    inputs:
+    secrets:
       licence_base64:
         description: "Base64 encoded licence file"
         required: true
