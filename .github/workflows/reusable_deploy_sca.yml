@@ -3,9 +3,26 @@ on:
   workflow_call:
     secrets:
       licence_base64:
-        description: "Base64 encoded licence file"
         required: true
-        type: string
+      AWS_PRIVATE_KEY:
+        required: true
+      AWS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY:
+        required: true
+      AWS_SECURITY_GROUP_ID:
+        required: true
+      AWS_SSH_USER:
+        required: true
+      JFROG_USER:
+        required: true
+      JFROG_TOKEN:
+        required: true
+      HEALTHZ_USERNAME:
+        required: true
+      HEALTHZ_PASSWORD:
+        required: true
+
 jobs:
   deploy_SCA:
     runs-on: ubuntu-latest
@@ -37,7 +54,7 @@ jobs:
 
       - name: Extract licence
         run: |
-            echo "${{ inputs.licence_base64 }}" | base64 --decode > ${{ github.workspace }}/bonita.lic
+            echo "${{ secrets.licence_base64 }}" | base64 --decode > ${{ github.workspace }}/bonita.lic
 
       - name: Check licence  
         run: |
