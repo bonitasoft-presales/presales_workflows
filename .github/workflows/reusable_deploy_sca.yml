@@ -1,4 +1,7 @@
 name: deploySca
+concurrency:
+  group: deploy-sca-${{ github.ref }}
+  cancel-in-progress: true
 on:
   workflow_call:
     secrets:
