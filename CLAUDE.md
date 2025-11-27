@@ -73,6 +73,113 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 - **Bonita license**: `licence_base64` - Base64-encoded Bonita license
 - **Health check**: `HEALTHZ_USERNAME`, `HEALTHZ_PASSWORD` - For health check authentication
 
+### How to Pass Secrets When Calling Workflows
+
+There are two ways to pass secrets to reusable workflows:
+
+#### Option 1: Using `secrets: inherit` (Recommended)
+
+The simplest approach - automatically passes all secrets from the calling repository:
+
+```yaml
+name: Deploy Demo
+on:
+  push:
+    branches: [main]
+
+jobs:
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.4.0
+    secrets: inherit
+
+  build_sca:
+    needs: create_server
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.4.0
+    secrets: inherit
+
+  deploy_sca:
+    needs: build_sca
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.4.0
+    secrets: inherit
+```
+
+#### Option 2: Explicit Secret Passing
+
+Pass only the required secrets explicitly (useful for fine-grained control):
+
+```yaml
+name: Deploy Demo
+on:
+  push:
+    branches: [main]
+
+jobs:
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.4.0
+    secrets:
+      JFROG_USER: ${{ secrets.JFROG_USER }}
+      JFROG_TOKEN: ${{ secrets.JFROG_TOKEN }}
+      GHP_USER: ${{ secrets.GHP_USER }}
+      GHP_TOKEN: ${{ secrets.GHP_TOKEN }}
+      AWS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECURITY_GROUP_ID: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+      AWS_PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+      AWS_SSH_USER: ${{ secrets.AWS_SSH_USER }}
+```
+
+#### Workflows with Inputs
+
+Some workflows require both inputs and secrets:
+
+```yaml
+jobs:
+  get_logs:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.4.0
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+      bonita_service: "bonita"
+    secrets: inherit
+
+  deploy_uib:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.4.0
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+    secrets: inherit
+```
+
+### Complete Example: Full Deployment Pipeline
+
+```yaml
+name: Full Demo Deployment
+on:
+  workflow_dispatch:
+
+jobs:
+  prerequisites:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.4.0
+    secrets: inherit
+
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.4.0
+    secrets: inherit
+
+  build_sca:
+    needs: [prerequisites, create_server]
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.4.0
+    secrets: inherit
+
+  deploy_sca:
+    needs: build_sca
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.4.0
+    secrets: inherit
+
+  run_tests:
+    needs: deploy_sca
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.4.0
+    secrets: inherit
+```
+
 ## Maven Configuration
 
 Uses Java 17 (Temurin) with these repositories:
