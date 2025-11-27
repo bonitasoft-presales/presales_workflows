@@ -1,6 +1,15 @@
 name: runIT
 on:
   workflow_call:
+    secrets:
+      JFROG_USER:
+        required: true
+      JFROG_TOKEN:
+        required: true
+      GHP_USER:
+        required: true
+      GHP_TOKEN:
+        required: true
 jobs:
   run_IT:
     runs-on: ubuntu-latest
