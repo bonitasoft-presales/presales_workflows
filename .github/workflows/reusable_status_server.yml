@@ -1,6 +1,19 @@
 name: statusServer
 on:
   workflow_call:
+    secrets:
+      JFROG_USER:
+        required: true
+      JFROG_TOKEN:
+        required: true
+      GHP_USER:
+        required: true
+      GHP_TOKEN:
+        required: true
+      AWS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY:
+        required: true
   workflow_dispatch:
 jobs:
   status_server:

@@ -10,6 +10,17 @@ on:
         required: true
         type: string
         description: "docker comper service that we want to get logs. example: bonita, bonita, bonita-ui,bonita-ui-proxy"
+    secrets:
+      AWS_PRIVATE_KEY:
+        required: true
+      AWS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY:
+        required: true
+      AWS_SECURITY_GROUP_ID:
+        required: true
+      AWS_SSH_USER:
+        required: true
 
 jobs:
   display_bonita_logs:
