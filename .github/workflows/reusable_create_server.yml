@@ -229,6 +229,12 @@ jobs:
               sudo docker --version
           '
 
+      - name: Add user to docker group
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+              sudo usermod -aG docker $USER
+          '
+
       - name: install Docker Compose
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
