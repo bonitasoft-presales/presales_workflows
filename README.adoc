@@ -1,0 +1,703 @@
+= Presales Workflows
+:toc: left
+:toclevels: 3
+:icons: font
+:source-highlighter: highlight.js
+
+Reusable GitHub Actions workflows for Bonitasoft presales demos.
+
+== Overview
+
+This repository contains reusable GitHub Actions workflows that automate:
+
+* AWS EC2 server provisioning and management
+* Bonita SCA (Software Composition Architecture) Docker image building and deployment
+* UI Builder (UIB) application deployment
+* Integration testing with the Bonita Test Toolkit
+* Data generation for demos
+
+== Quick Start
+
+=== Using `secrets: inherit` (Recommended)
+
+The simplest approach - automatically passes all secrets from the calling repository:
+
+[source,yaml]
+----
+name: Deploy Demo
+on:
+  push:
+    branches: [main]
+
+jobs:
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.6.0
+    secrets: inherit
+
+  build_sca:
+    needs: create_server
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.6.0
+    secrets: inherit
+
+  deploy_sca:
+    needs: build_sca
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.6.0
+    secrets: inherit
+----
+
+== Workflows Reference
+
+=== reusable_create_server.yml
+
+Provisions an AWS EC2 instance with Docker and Docker Compose installed.
+
+==== Inputs
+
+[cols="2,1,2,3", options="header"]
+|===
+|Name |Required |Default |Description
+
+|`instance_type`
+|No
+|`t3.large`
+|EC2 instance type
+
+|`disk_size`
+|No
+|`20`
+|Disk size in GB
+
+|`ami_id`
+|No
+|`ami-0776c814353b4814d`
+|AMI ID (Ubuntu Server 2024.04 LTS x86)
+
+|`aws_region`
+|No
+|`eu-west-1`
+|AWS region
+
+|`key_name`
+|No
+|`presale-ci-eu-west-1`
+|AWS key pair name
+
+|`security_group`
+|No
+|`bonitasoft_presales`
+|AWS security group name
+
+|`bonita_aws_version`
+|No
+|`1.8`
+|Version of bonita-aws library
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID
+
+|`AWS_PRIVATE_KEY`
+|AWS SSH private key
+
+|`AWS_SSH_USER`
+|AWS SSH username
+|===
+
+==== Outputs
+
+* Uploads `aws_instance.yaml` artifact containing the EC2 instance public DNS name
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.6.0
+    with:
+      instance_type: 't3.xlarge'
+      disk_size: '50'
+    secrets: inherit
+----
+
+---
+
+=== reusable_build_sca.yml
+
+Builds a Bonita SCA Docker image using Maven and transfers it to the AWS instance.
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID
+
+|`AWS_PRIVATE_KEY`
+|AWS SSH private key
+
+|`AWS_SSH_USER`
+|AWS SSH username
+|===
+
+==== Prerequisites
+
+* Requires `aws_instance` artifact from `reusable_create_server.yml`
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  build_sca:
+    needs: create_server
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.6.0
+    secrets: inherit
+----
+
+---
+
+=== reusable_deploy_sca.yml
+
+Deploys the SCA container via docker-compose on the AWS instance.
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`licence_base64`
+|Base64-encoded Bonita license
+
+|`AWS_PRIVATE_KEY`
+|AWS SSH private key
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID
+
+|`AWS_SSH_USER`
+|AWS SSH username
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`HEALTHZ_USERNAME`
+|Health check endpoint username
+
+|`HEALTHZ_PASSWORD`
+|Health check endpoint password
+|===
+
+==== Prerequisites
+
+* Requires `aws_instance` artifact from `reusable_create_server.yml`
+* Requires SCA Docker image from `reusable_build_sca.yml`
+
+==== Exposed Ports
+
+[cols="1,2", options="header"]
+|===
+|Port |Service
+
+|`80`
+|Bonita (via reverse proxy)
+
+|`8081`
+|Bonita (direct)
+
+|`8084`
+|Keycloak
+
+|`8088`
+|Mail (Roundcube)
+|===
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  deploy_sca:
+    needs: build_sca
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.6.0
+    secrets: inherit
+----
+
+---
+
+=== reusable_deploy_uib.yml
+
+Deploys UI Builder applications via REST API.
+
+==== Inputs
+
+[cols="2,1,3", options="header"]
+|===
+|Name |Required |Description
+
+|`bonita_dns_name`
+|Yes
+|Target server DNS name (e.g., `ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com`)
+|===
+
+==== Secrets
+
+No secrets required (uses REST API with default credentials).
+
+==== Prerequisites
+
+* UIB application JSON files must be in the `uib/` folder of your repository
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  deploy_uib:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib.yml@v1.6.0
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+----
+
+---
+
+=== reusable_deploy_uib_aws.yml
+
+Deploys UI Builder applications directly on AWS via SSH (alternative to REST API deployment).
+
+==== Inputs
+
+[cols="2,1,3", options="header"]
+|===
+|Name |Required |Description
+
+|`bonita_dns_name`
+|Yes
+|Target server DNS name (e.g., `ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com`)
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`AWS_PRIVATE_KEY`
+|AWS SSH private key
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID
+
+|`AWS_SSH_USER`
+|AWS SSH username
+|===
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  deploy_uib:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.6.0
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+    secrets: inherit
+----
+
+---
+
+=== reusable_prerequisites.yml
+
+Checks for the existence of `IT/` and `datagen/` folders in the repository.
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+|===
+
+==== Outputs
+
+* Uploads `pre_requisites.yaml` artifact containing:
+** `IT_FOLDER_EXISTS`: `true` or `false`
+** `DATAGEN_FOLDER_EXISTS`: `true` or `false`
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  prerequisites:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.6.0
+    secrets: inherit
+----
+
+---
+
+=== reusable_run_it.yml
+
+Runs integration tests from the `IT/` folder using the Bonita Test Toolkit.
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+|===
+
+==== Prerequisites
+
+* Requires `aws_instance` artifact from `reusable_create_server.yml`
+* Requires `pre_requisites` artifact from `reusable_prerequisites.yml`
+* Only runs if `IT_FOLDER_EXISTS` is `true`
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  run_tests:
+    needs: [deploy_sca, prerequisites]
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.6.0
+    secrets: inherit
+----
+
+---
+
+=== reusable_run_datagen.yml
+
+Runs data generation from the `datagen/` folder.
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+|===
+
+==== Prerequisites
+
+* Requires `aws_instance` artifact from `reusable_create_server.yml`
+* Requires `pre_requisites` artifact from `reusable_prerequisites.yml`
+* Only runs if `DATAGEN_FOLDER_EXISTS` is `true`
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  run_datagen:
+    needs: [deploy_sca, prerequisites]
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.6.0
+    secrets: inherit
+----
+
+---
+
+=== reusable_status_server.yml
+
+Gets the status of an existing AWS server.
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+|===
+
+==== Outputs
+
+* Uploads `aws_instance.yaml` artifact containing the EC2 instance public DNS name
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  status_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_status_server.yml@v1.6.0
+    secrets: inherit
+----
+
+---
+
+=== reusable_get_bonita_logs.yml
+
+Retrieves Docker logs from the AWS instance and uploads them as an artifact.
+
+==== Inputs
+
+[cols="2,1,3", options="header"]
+|===
+|Name |Required |Description
+
+|`bonita_dns_name`
+|Yes
+|Target server DNS name
+
+|`bonita_service`
+|Yes
+|Docker Compose service name (e.g., `bonita`, `bonita-ui`, `bonita-ui-proxy`)
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`AWS_PRIVATE_KEY`
+|AWS SSH private key
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID
+
+|`AWS_SSH_USER`
+|AWS SSH username
+|===
+
+==== Outputs
+
+* Uploads `{service_name}.log` artifact
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  get_logs:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.6.0
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+      bonita_service: "bonita"
+    secrets: inherit
+----
+
+== Complete Pipeline Example
+
+[source,yaml]
+----
+name: Full Demo Deployment
+on:
+  workflow_dispatch:
+
+jobs:
+  prerequisites:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.6.0
+    secrets: inherit
+
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.6.0
+    secrets: inherit
+
+  build_sca:
+    needs: [prerequisites, create_server]
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.6.0
+    secrets: inherit
+
+  deploy_sca:
+    needs: build_sca
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.6.0
+    secrets: inherit
+
+  run_tests:
+    needs: [deploy_sca, prerequisites]
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.6.0
+    secrets: inherit
+
+  run_datagen:
+    needs: [deploy_sca, prerequisites]
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.6.0
+    secrets: inherit
+----
+
+== Secrets Reference
+
+=== AWS Credentials
+
+[cols="2,3", options="header"]
+|===
+|Secret |Description
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_PRIVATE_KEY`
+|SSH private key for EC2 access
+
+|`AWS_SECURITY_GROUP_ID`
+|Security group ID for firewall rules
+
+|`AWS_SSH_USER`
+|SSH username (typically `ubuntu`)
+|===
+
+=== JFrog Credentials
+
+[cols="2,3", options="header"]
+|===
+|Secret |Description
+
+|`JFROG_USER`
+|Bonitasoft artifact repository username
+
+|`JFROG_TOKEN`
+|Bonitasoft artifact repository token
+|===
+
+=== GitHub Packages
+
+[cols="2,3", options="header"]
+|===
+|Secret |Description
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages personal access token
+|===
+
+=== Bonita
+
+[cols="2,3", options="header"]
+|===
+|Secret |Description
+
+|`licence_base64`
+|Base64-encoded Bonita license file
+
+|`HEALTHZ_USERNAME`
+|Health check endpoint username
+
+|`HEALTHZ_PASSWORD`
+|Health check endpoint password
+|===
+
+== License
+
+Copyright Bonitasoft
