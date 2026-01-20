@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+[.claude/github_actions.md](requirements for github actions)
+
 ## Repository Purpose
 
 This repository contains reusable GitHub Actions workflows for Bonitasoft presales demos. The workflows automate:
@@ -59,7 +61,7 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 | `reusable_deploy_sca.yml` | `licence_base64`, `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER`, `JFROG_USER`, `JFROG_TOKEN`, `HEALTHZ_USERNAME`, `HEALTHZ_PASSWORD` |
 | `reusable_deploy_uib.yml` | None (uses REST API with credentials in request) |
 | `reusable_deploy_uib_aws.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
-| `reusable_prerequisites.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
+| `reusable_prerequisites.yml` | None |
 | `reusable_status_server.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY` |
 | `reusable_run_it.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
@@ -158,7 +160,6 @@ on:
 jobs:
   prerequisites:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.4.0
-    secrets: inherit
 
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.4.0
