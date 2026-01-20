@@ -1,12 +1,6 @@
 name: test_build_sca
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - chore/add-missing-test-workflows
-
-# Note: This workflow depends on aws_instance artifact from reusable_create_server.yml
-# Run create_server first or use a full pipeline test
 
 jobs:
   create_server:

@@ -1,12 +1,6 @@
 name: test_run_datagen
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - chore/add-missing-test-workflows
-
-# Note: This workflow depends on aws_instance and pre_requisites artifacts
-# Full pipeline: prerequisites + create_server -> build_sca -> deploy_sca -> run_datagen
 
 jobs:
   prerequisites:

@@ -11,6 +11,8 @@
 
 ### create test action for each reusable action. 
 
+test action should be only on workflow dispatch, with required parameters
+
 exclusions:
 
 | suffix        | required          | comment |

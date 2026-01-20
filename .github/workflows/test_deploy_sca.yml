@@ -1,12 +1,6 @@
 name: test_deploy_sca
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - chore/add-missing-test-workflows
-
-# Note: This workflow depends on aws_instance artifact and SCA image
-# Full pipeline: create_server -> build_sca -> deploy_sca
 
 jobs:
   create_server:

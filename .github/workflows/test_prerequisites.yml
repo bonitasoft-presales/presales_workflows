@@ -1,9 +1,6 @@
 name: test_prerequisites
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - chore/update-claude-md-prerequisites
 
 jobs:
   check_prerequisites:
