@@ -1,0 +1,25 @@
+name: test_get_bonita_logs
+on:
+  workflow_dispatch:
+    inputs:
+      bonita_dns_name:
+        description: 'Bonita server DNS name'
+        required: true
+        type: string
+      bonita_service:
+        description: 'Docker service name to get logs from'
+        required: true
+        type: choice
+        options:
+          - bonita
+          - postgresql
+          - bonita-ui
+          - bonita-ui-proxy
+
+jobs:
+  get_bonita_logs:
+    uses: ./.github/workflows/reusable_get_bonita_logs.yml
+    with:
+      bonita_dns_name: ${{ inputs.bonita_dns_name }}
+      bonita_service: ${{ inputs.bonita_service }}
+    secrets: inherit

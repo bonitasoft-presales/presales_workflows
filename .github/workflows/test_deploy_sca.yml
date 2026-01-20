@@ -1,0 +1,18 @@
+name: test_deploy_sca
+on:
+  workflow_dispatch:
+
+jobs:
+  create_server:
+    uses: ./.github/workflows/reusable_create_server.yml
+    secrets: inherit
+
+  build_sca:
+    needs: create_server
+    uses: ./.github/workflows/reusable_build_sca.yml
+    secrets: inherit
+
+  deploy_sca:
+    needs: build_sca
+    uses: ./.github/workflows/reusable_deploy_sca.yml
+    secrets: inherit

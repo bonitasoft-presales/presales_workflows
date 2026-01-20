@@ -1,0 +1,8 @@
+name: test_status_server
+on:
+  workflow_dispatch:
+
+jobs:
+  status_server:
+    uses: ./.github/workflows/reusable_status_server.yml
+    secrets: inherit
