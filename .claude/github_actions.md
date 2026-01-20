@@ -9,23 +9,12 @@
 
 ## required actions for reusable actions
 
-### create test action for each reusable action. 
+Create test action for each reusable action. Test actions should be only on workflow_dispatch, with required parameters.
 
-test action should be only on workflow dispatch, with required parameters
+When actions depend on a previous action, mock expected content.
 
-exclusions:
+Each action should provide relevant information about artifacts, env var setting in $GITHUB_STEP_SUMMARY, with job, version and step name.
 
-| suffix        | required          | comment |
-|---------------|-------------------|---------|
-| build_sca     | no                |         |
-| create_server | workflow dispatch |         |
-| deploy_sca    | no                |         |
-| deploy_uib    | no                |         |
-| run_it        | no                |         |
-| run_datagen   | no                |         |
+## Documentation
 
-
-
-### when actions depends on a previous action, just mock expected content
-
-### each action should provide relevant information about artifacts, env var setting in $GITHUB_STEP_SUMMARY , with job, version  and step step name
+Always keep README up to date with latest changes **before** commit.

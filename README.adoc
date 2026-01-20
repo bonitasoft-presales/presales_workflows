@@ -372,22 +372,7 @@ Checks for the existence of `IT/` and `datagen/` folders in the repository.
 
 ==== Secrets
 
-[cols="2,3", options="header"]
-|===
-|Name |Description
-
-|`JFROG_USER`
-|JFrog Artifactory username
-
-|`JFROG_TOKEN`
-|JFrog Artifactory token
-
-|`GHP_USER`
-|GitHub Packages username
-
-|`GHP_TOKEN`
-|GitHub Packages token
-|===
+No secrets required.
 
 ==== Outputs
 
@@ -402,7 +387,6 @@ Checks for the existence of `IT/` and `datagen/` folders in the repository.
 jobs:
   prerequisites:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.6.0
-    secrets: inherit
 ----
 
 ---
