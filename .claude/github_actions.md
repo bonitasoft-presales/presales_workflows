@@ -9,4 +9,21 @@
 
 ## required actions for reusable actions
 
-create test action for each reusable action
+### create test action for each reusable action. 
+
+exclusions:
+
+| suffix        | required          | comment |
+|---------------|-------------------|---------|
+| build_sca     | no                |         |
+| create_server | workflow dispatch |         |
+| deploy_sca    | no                |         |
+| deploy_uib    | no                |         |
+| run_it        | no                |         |
+| run_datagen   | no                |         |
+
+
+
+### when actions depends on a previous action, just mock expected content
+
+### each action should provide relevant information about artifacts, env var setting in $GITHUB_STEP_SUMMARY , with job, version  and step step name
