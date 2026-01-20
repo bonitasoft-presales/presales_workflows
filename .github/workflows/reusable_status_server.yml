@@ -160,7 +160,7 @@ jobs:
           java -jar bonita-aws-${bonitaAwsVersion}-jar-with-dependencies.jar \
           -c status \
           --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
-          --key-name ${keyName} \
+          --key-name ${keyName}
 
       - name: Copy aws yaml file
         run: |
