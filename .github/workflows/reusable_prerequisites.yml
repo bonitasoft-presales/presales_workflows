@@ -61,8 +61,15 @@ jobs:
       - name: display variables
         id: set-env-variable
         run: |
-          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['IT_FOLDER_EXISTS'] }}"  
-          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['DATAGEN_FOLDER_EXISTS'] }}"  
+          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['IT_FOLDER_EXISTS'] }}"
+          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-file.outputs['DATAGEN_FOLDER_EXISTS'] }}"
 
-
+      - name: Write to job summary
+        run: |
+          echo "## Prerequisites Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Folder | Exists |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| IT | ${{ steps.check-it.outputs.IT_FOLDER_EXISTS }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| datagen | ${{ steps.check-datagen.outputs.DATAGEN_FOLDER_EXISTS }} |" >> $GITHUB_STEP_SUMMARY
 
