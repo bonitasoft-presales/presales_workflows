@@ -1,0 +1,14 @@
+name: test_status_server
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chore/add-missing-test-workflows
+
+# Note: This workflow checks status of an existing AWS server
+# The server must already exist (created by reusable_create_server.yml)
+
+jobs:
+  status_server:
+    uses: ./.github/workflows/reusable_status_server.yml
+    secrets: inherit

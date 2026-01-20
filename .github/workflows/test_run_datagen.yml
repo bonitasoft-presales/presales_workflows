@@ -1,0 +1,32 @@
+name: test_run_datagen
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - chore/add-missing-test-workflows
+
+# Note: This workflow depends on aws_instance and pre_requisites artifacts
+# Full pipeline: prerequisites + create_server -> build_sca -> deploy_sca -> run_datagen
+
+jobs:
+  prerequisites:
+    uses: ./.github/workflows/reusable_prerequisites.yml
+
+  create_server:
+    uses: ./.github/workflows/reusable_create_server.yml
+    secrets: inherit
+
+  build_sca:
+    needs: [prerequisites, create_server]
+    uses: ./.github/workflows/reusable_build_sca.yml
+    secrets: inherit
+
+  deploy_sca:
+    needs: build_sca
+    uses: ./.github/workflows/reusable_deploy_sca.yml
+    secrets: inherit
+
+  run_datagen:
+    needs: deploy_sca
+    uses: ./.github/workflows/reusable_run_datagen.yml
+    secrets: inherit
