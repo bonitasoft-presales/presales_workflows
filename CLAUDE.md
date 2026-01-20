@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 [.claude/github_actions.md](requirements for github actions)
+[.claude/release.md](requirements for github releases)
 
 ## Repository Purpose
 
