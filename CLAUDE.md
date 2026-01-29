@@ -92,17 +92,17 @@ on:
 
 jobs:
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.7.1
     secrets: inherit
 
   build_sca:
     needs: create_server
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.7.1
     secrets: inherit
 
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.7.1
     secrets: inherit
 ```
 
@@ -118,7 +118,7 @@ on:
 
 jobs:
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.7.1
     secrets:
       JFROG_USER: ${{ secrets.JFROG_USER }}
       JFROG_TOKEN: ${{ secrets.JFROG_TOKEN }}
@@ -138,14 +138,14 @@ Some workflows require both inputs and secrets:
 ```yaml
 jobs:
   get_logs:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.7.1
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       bonita_service: "bonita"
     secrets: inherit
 
   deploy_uib:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.7.1
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
     secrets: inherit
@@ -160,25 +160,25 @@ on:
 
 jobs:
   prerequisites:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.7.1
 
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.7.1
     secrets: inherit
 
   build_sca:
     needs: [prerequisites, create_server]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.7.1
     secrets: inherit
 
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.7.1
     secrets: inherit
 
   run_tests:
     needs: deploy_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.7.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.7.1
     secrets: inherit
 ```
 

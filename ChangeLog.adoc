@@ -1,0 +1,28 @@
+= Changelog
+
+== v1.7.1 (2026-01-29)
+
+=== Bug Fixes
+
+* Fixed Maven build command in `reusable_build_sca.yml` to use `clean install` instead of `clean package`
+  - This resolves build issues with BDM (Business Data Model) dependencies in Bonita 2025.2
+  - The `install` goal ensures all project artifacts are installed to the local Maven repository before packaging
+
+== v1.7.0 (2026-01-20)
+
+* Updated documentation with comprehensive workflow reference
+* Added release guidelines
+* Fixed documentation inconsistencies
+* Added missing test workflows
+
+== v1.6.0 (2025-12-11)
+
+* Previous release
+
+== v1.5.1 (2025-12-05)
+
+* Previous release
+
+== v1.5.0 (2025-11-27)
+
+* Previous release
