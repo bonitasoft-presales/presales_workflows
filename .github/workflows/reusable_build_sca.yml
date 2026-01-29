@@ -137,8 +137,8 @@ jobs:
       - name: Build Docker SCA image
         # docker.baseImageRepository isrequired when using bonitasoft tokens instead of customer tokens
         run: |
-          ./mvnw --batch-mode --no-transfer-progress	 bonita-project:install
-          ./mvnw --batch-mode --no-transfer-progress	 clean package \
+          ./mvnw --batch-mode --no-transfer-progress bonita-project:install
+          ./mvnw --batch-mode --no-transfer-progress clean install \
           -Pdocker \
           -Dbonita.environment=presales \
           -Ddocker.baseImageRepository=bonitasoft.jfrog.io/docker-releases/bonita-subscription \
