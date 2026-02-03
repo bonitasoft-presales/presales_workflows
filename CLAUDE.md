@@ -29,8 +29,8 @@ All reusable workflows are in `.github/workflows/` with the naming convention:
 | `reusable_create_server.yml` | Provisions an AWS EC2 instance with Docker and Docker Compose |
 | `reusable_build_sca.yml` | Builds Bonita SCA Docker image using Maven |
 | `reusable_deploy_sca.yml` | Deploys SCA container via docker-compose on AWS |
-| `reusable_deploy_uib.yml` | Deploys UI Builder applications via REST API |
-| `reusable_deploy_uib_aws.yml` | Deploys UIB applications directly on AWS via SSH |
+| `reusable_deploy_uib.yml` | Deploys UI Builder applications via REST API (default: `app/web_applications/`) |
+| `reusable_deploy_uib_aws.yml` | Deploys UIB applications directly on AWS via SSH (default: `app/web_applications/`) |
 | `reusable_run_it.yml` | Runs integration tests from `IT/` folder |
 | `reusable_run_datagen.yml` | Runs data generation from `datagen/` folder |
 | `reusable_prerequisites.yml` | Checks for IT and datagen folders existence |
@@ -148,6 +148,27 @@ jobs:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.7.1
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+      # Optional: customize UIB folder (defaults to "app/web_applications")
+      # uib_folder: "custom/uib/path"
+    secrets: inherit
+```
+
+#### UIB Deployment Workflows
+
+Both `reusable_deploy_uib.yml` and `reusable_deploy_uib_aws.yml` support:
+
+**Inputs:**
+- `bonita_dns_name` (required): Target server DNS name
+- `uib_folder` (optional): Folder containing UIB applications (JSON files). Defaults to `"app/web_applications"`
+
+**Example with custom folder:**
+```yaml
+jobs:
+  deploy_uib:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.7.1
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+      uib_folder: "uib"  # Use legacy folder structure
     secrets: inherit
 ```
 

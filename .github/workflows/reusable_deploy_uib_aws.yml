@@ -6,6 +6,11 @@ on:
         required: true
         type: string
         description: "target serveur, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
+      uib_folder:
+        required: false
+        type: string
+        default: "app/web_applications"
+        description: "folder containing UIB applications (JSON files)"
     secrets:
       AWS_PRIVATE_KEY:
         required: true
@@ -34,8 +39,8 @@ jobs:
         run: |
           rm -rf ${UIB_FOLDER}
           mkdir -p ${UIB_FOLDER}
-          ls -ltr "${PROJECT_FOLDER}/uib"
-          find "${PROJECT_FOLDER}/uib" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
+          ls -ltr "${PROJECT_FOLDER}/${{ inputs.uib_folder }}"
+          find "${PROJECT_FOLDER}/${{ inputs.uib_folder }}" -type f -name "*.json" -exec zip "${UIB_FOLDER}/uib_applications.zip" -j {} +
           unzip -l "${UIB_FOLDER}/uib_applications.zip"
           ZIP_FILE="${UIB_FOLDER}/uib_applications.zip"
           echo "deploy zip applications: ${ZIP_FILE}"
