@@ -1,5 +1,15 @@
 = Changelog
 
+== v1.8.0 (2026-02-03)
+
+=== Features
+
+* Added configurable `uib_folder` parameter to UIB deployment workflows
+  - Both `reusable_deploy_uib.yml` and `reusable_deploy_uib_aws.yml` now accept an optional `uib_folder` input parameter
+  - Default value changed from `uib` to `app/web_applications` to match Bonita studio project structure
+  - Parameter is optional and maintains backward compatibility
+  - Allows customization of UIB applications folder location per deployment
+
 == v1.7.1 (2026-01-29)
 
 === Bug Fixes
