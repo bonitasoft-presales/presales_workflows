@@ -1,0 +1,63 @@
+name: PR Closed Handler
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        description: 'PR number'
+        required: true
+        type: number
+      pr_title:
+        description: 'PR title'
+        required: true
+        type: string
+      pr_merged:
+        description: 'Whether the PR was merged'
+        required: true
+        type: boolean
+      pr_base_ref:
+        description: 'Base branch'
+        required: true
+        type: string
+      pr_head_ref:
+        description: 'Head branch'
+        required: true
+        type: string
+      pr_actor_login:
+        description: 'User who merged or closed the PR'
+        required: true
+        type: stringupdate
+      pr_merge_commit_sha:
+        description: 'Merge commit SHA (empty if not merged)'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  if_merged:
+    if: inputs.pr_merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR was merged
+        run: |
+          echo "✅ The PR was merged"
+          echo "PR Number: ${{ inputs.pr_number }}"
+          echo "PR Title: ${{ inputs.pr_title }}"
+          echo "Merged by: ${{ inputs.pr_actor_login }}"
+          echo "Base branch: ${{ inputs.pr_base_ref }}"
+          echo "Head branch: ${{ inputs.pr_head_ref }}"
+          echo "Merge commit SHA: ${{ inputs.pr_merge_commit_sha }}"
+
+  if_closed_without_merge:
+    if: inputs.pr_merged == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR was closed without merging
+        run: |
+          echo "❌ The PR was closed without merging"
+          echo "PR Number: ${{ inputs.pr_number }}"
+          echo "PR Title: ${{ inputs.pr_title }}"
+          echo "Closed by: ${{ inputs.pr_actor_login }}"
+          echo "Base branch: ${{ inputs.pr_base_ref }}"
+          echo "Head branch: ${{ inputs.pr_head_ref }}"
+          echo "Reason: PR was closed without merging (possibly rejected or abandoned)"

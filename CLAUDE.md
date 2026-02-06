@@ -36,6 +36,7 @@ All reusable workflows are in `.github/workflows/` with the naming convention:
 | `reusable_prerequisites.yml` | Checks for IT and datagen folders existence |
 | `reusable_status_server.yml` | Gets status of existing AWS server |
 | `reusable_get_bonita_logs.yml` | Retrieves Docker logs from AWS instance |
+| `reusable_pr_closed.yml` | Handles PR closure events (merged or closed without merge) |
 
 ### AWS Infrastructure
 
@@ -67,6 +68,7 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 | `reusable_run_it.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_get_bonita_logs.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
+| `reusable_pr_closed.yml` | None |
 
 ### Secret Descriptions
 
@@ -171,6 +173,44 @@ jobs:
       uib_folder: "uib"  # Use legacy folder structure
     secrets: inherit
 ```
+
+#### PR Closed Handler Workflow
+
+The `reusable_pr_closed.yml` workflow handles PR closure events and distinguishes between merged and closed-without-merge scenarios.
+
+**Inputs:**
+- `pr_number` (required): PR number
+- `pr_title` (required): PR title
+- `pr_merged` (required): Whether the PR was merged (boolean)
+- `pr_base_ref` (required): Base branch name
+- `pr_head_ref` (required): Head branch name
+- `pr_actor_login` (required): User who merged or closed the PR
+- `pr_merge_commit_sha` (optional): Merge commit SHA (empty if not merged)
+
+**Example usage:**
+```yaml
+name: Handle PR Closure
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  handle_pr:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_pr_closed.yml@v1.8.0
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+      pr_title: ${{ github.event.pull_request.title }}
+      pr_merged: ${{ github.event.pull_request.merged }}
+      pr_base_ref: ${{ github.event.pull_request.base.ref }}
+      pr_head_ref: ${{ github.event.pull_request.head.ref }}
+      pr_actor_login: ${{ github.event.pull_request.merged && github.event.pull_request.merged_by.login || github.event.pull_request.user.login }}
+      pr_merge_commit_sha: ${{ github.event.pull_request.merge_commit_sha }}
+```
+
+**Behavior:**
+- When a PR is **merged**: Logs PR details with merge commit SHA
+- When a PR is **closed without merging**: Logs PR details and indicates it was not merged
 
 ### Complete Example: Full Deployment Pipeline
 
