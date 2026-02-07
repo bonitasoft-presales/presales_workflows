@@ -23,4 +23,11 @@ jobs:
   run_datagen:
     needs: deploy_sca
     uses: ./.github/workflows/reusable_run_datagen.yml
+    # Inputs (all optional):
+    #   datagen_folder: "datagen" (default)
+    #   bonita_dns: defaults to AWS instance DNS
+    #   bonita_port: "8081" (default)
+    #   smtp_server: "greenmail" (default)
+    #   smtp_port: "3025" (default)
+    # Secrets (SF_USERNAME, SF_PASSWORD, SF_TOKEN are optional Salesforce credentials)
     secrets: inherit

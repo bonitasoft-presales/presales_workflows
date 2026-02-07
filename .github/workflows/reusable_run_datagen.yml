@@ -1,6 +1,31 @@
 name: runDataGeneration
 on:
   workflow_call:
+    inputs:
+      datagen_folder:
+        required: false
+        type: string
+        default: "datagen"
+        description: "Folder containing data generation Maven project"
+      bonita_dns:
+        required: false
+        type: string
+        description: "Bonita server DNS name (defaults to AWS instance DNS if not provided)"
+      bonita_port:
+        required: false
+        type: string
+        default: "8081"
+        description: "Bonita server port"
+      smtp_server:
+        required: false
+        type: string
+        default: "greenmail"
+        description: "SMTP server hostname for email testing"
+      smtp_port:
+        required: false
+        type: string
+        default: "3025"
+        description: "SMTP server port for email testing"
     secrets:
       JFROG_USER:
         required: true
@@ -10,6 +35,12 @@ on:
         required: true
       GHP_TOKEN:
         required: true
+      SF_USERNAME:
+        required: false
+      SF_PASSWORD:
+        required: false
+      SF_TOKEN:
+        required: false
 jobs:
   run_data_generation:
     runs-on: ubuntu-latest
@@ -131,23 +162,40 @@ jobs:
       - name: set env variables
         id: set-env-variable
         run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
-          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['IT_FOLDER_EXISTS'] }}" >> $GITHUB_ENV 
-          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['DATAGEN_FOLDER_EXISTS'] }}" >> $GITHUB_ENV 
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV
+          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['IT_FOLDER_EXISTS'] }}" >> $GITHUB_ENV
+          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['DATAGEN_FOLDER_EXISTS'] }}" >> $GITHUB_ENV
+          if [ -n "${{ inputs.bonita_dns }}" ]; then
+            BONITA_DNS="${{ inputs.bonita_dns }}"
+          else
+            BONITA_DNS="${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}"
+          fi
+          BONITA_PORT="${{ inputs.bonita_port }}"
+          BONITA_URL="http://${BONITA_DNS}:${BONITA_PORT}/bonita"
+          echo "BONITA_DNS=${BONITA_DNS}" >> $GITHUB_ENV
+          echo "BONITA_PORT=${BONITA_PORT}" >> $GITHUB_ENV
+          echo "BONITA_URL=${BONITA_URL}" >> $GITHUB_ENV 
 
-      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
+      - name: display env variables
         id: display-env-variable
         run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
-          echo "IT_FOLDER_EXISTS: [${IT_FOLDER_EXISTS}]" 
-          echo "DATAGEN_FOLDER_EXISTS: [${DATAGEN_FOLDER_EXISTS}]" 
+          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]"
+          echo "IT_FOLDER_EXISTS: [${IT_FOLDER_EXISTS}]"
+          echo "DATAGEN_FOLDER_EXISTS: [${DATAGEN_FOLDER_EXISTS}]"
+          echo "BONITA_DNS: [${BONITA_DNS}]"
+          echo "BONITA_PORT: [${BONITA_PORT}]"
+          echo "BONITA_URL: [${BONITA_URL}]" 
 
-      - name: run datagen test
+      - name: run datagen
         if: env.DATAGEN_FOLDER_EXISTS == 'true'
         run: |
-          echo "Integration test using Bonita test toolkit"
+          echo "Run data generation"
           ./mvnw --batch-mode --no-transfer-progress clean verify \
-          -f datagen/pom.xml \
-          -Dbonita.url=http://${AWS_PUBLIC_DNS_HOSTNAME}:8081/bonita \
-          -DSMTP_SERVER=greenmail \
-          -DSMTP_PORT=3025
+          -f ${{ inputs.datagen_folder }}/pom.xml \
+          -Dbonita.url=${BONITA_URL} \
+          -DSMTP_SERVER=${{ inputs.smtp_server }} \
+          -DSMTP_PORT=${{ inputs.smtp_port }} \
+          -DSALESFORCE_USERNAME=${{ secrets.SF_USERNAME }} \
+          -DSALESFORCE_PASSWORD=${{ secrets.SF_PASSWORD }} \
+          -DSALESFORCE_TOKEN=${{ secrets.SF_TOKEN }}
+        
