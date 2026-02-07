@@ -1,5 +1,20 @@
 = Changelog
 
+== v1.9.0 (2026-02-07)
+
+=== Features
+
+* Added configurable parameters to data generation workflow (`reusable_run_datagen.yml`)
+  - `datagen_folder` input parameter (default: `"datagen"`) - allows customization of data generation project folder location
+  - `bonita_dns` input parameter (defaults to AWS instance DNS) - specify custom Bonita server DNS
+  - `bonita_port` input parameter (default: `"8081"`) - configure Bonita server port (e.g., `"80"` for proxy)
+  - `smtp_server` input parameter (default: `"greenmail"`) - customize SMTP server for email testing
+  - `smtp_port` input parameter (default: `"3025"`) - customize SMTP port
+  - Optional Salesforce secrets support (`SF_USERNAME`, `SF_PASSWORD`, `SF_TOKEN`)
+  - All parameters are optional with sensible defaults, maintaining backward compatibility
+* Enhanced environment variable display in datagen workflow for improved debugging
+  - Now displays `BONITA_DNS`, `BONITA_PORT`, and constructed `BONITA_URL`
+
 == v1.8.0 (2026-02-03)
 
 === Features

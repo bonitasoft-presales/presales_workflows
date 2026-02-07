@@ -31,17 +31,17 @@ on:
 
 jobs:
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.9.0
     secrets: inherit
 
   build_sca:
     needs: create_server
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.9.0
     secrets: inherit
 
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.9.0
     secrets: inherit
 ----
 
@@ -137,7 +137,7 @@ Provisions an AWS EC2 instance with Docker and Docker Compose installed.
 ----
 jobs:
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.9.0
     with:
       instance_type: 't3.xlarge'
       disk_size: '50'
@@ -195,7 +195,7 @@ Builds a Bonita SCA Docker image using Maven and transfers it to the AWS instanc
 jobs:
   build_sca:
     needs: create_server
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.9.0
     secrets: inherit
 ----
 
@@ -273,7 +273,7 @@ Deploys the SCA container via docker-compose on the AWS instance.
 jobs:
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.9.0
     secrets: inherit
 ----
 
@@ -314,7 +314,7 @@ No secrets required (uses REST API with default credentials).
 ----
 jobs:
   deploy_uib:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib.yml@v1.9.0
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       # Optional: customize UIB folder (defaults to "app/web_applications")
@@ -372,7 +372,7 @@ Deploys UI Builder applications directly on AWS via SSH (alternative to REST API
 ----
 jobs:
   deploy_uib:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.9.0
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       # Optional: customize UIB folder (defaults to "app/web_applications")
@@ -402,7 +402,7 @@ No secrets required.
 ----
 jobs:
   prerequisites:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.9.0
 ----
 
 ---
@@ -443,7 +443,7 @@ Runs integration tests from the `IT/` folder using the Bonita Test Toolkit.
 jobs:
   run_tests:
     needs: [deploy_sca, prerequisites]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.9.0
     secrets: inherit
 ----
 
@@ -452,6 +452,38 @@ jobs:
 === reusable_run_datagen.yml
 
 Runs data generation from the `datagen/` folder.
+
+==== Inputs
+
+[cols="2,1,2,3", options="header"]
+|===
+|Name |Required |Default |Description
+
+|`datagen_folder`
+|No
+|`datagen`
+|Folder containing data generation Maven project
+
+|`bonita_dns`
+|No
+|AWS instance DNS
+|Bonita server DNS name (defaults to AWS instance DNS if not provided)
+
+|`bonita_port`
+|No
+|`8081`
+|Bonita server port
+
+|`smtp_server`
+|No
+|`greenmail`
+|SMTP server hostname for email testing
+
+|`smtp_port`
+|No
+|`3025`
+|SMTP server port for email testing
+|===
 
 ==== Secrets
 
@@ -470,6 +502,15 @@ Runs data generation from the `datagen/` folder.
 
 |`GHP_TOKEN`
 |GitHub Packages token
+
+|`SF_USERNAME`
+|Salesforce username (optional)
+
+|`SF_PASSWORD`
+|Salesforce password (optional)
+
+|`SF_TOKEN`
+|Salesforce security token (optional)
 |===
 
 ==== Prerequisites
@@ -485,7 +526,14 @@ Runs data generation from the `datagen/` folder.
 jobs:
   run_datagen:
     needs: [deploy_sca, prerequisites]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.9.0
+    with:
+      # All inputs are optional with sensible defaults
+      datagen_folder: "datagen"  # default
+      bonita_port: "80"          # override to use proxy port
+      # bonita_dns: "custom.example.com"  # override AWS DNS
+      # smtp_server: "smtp.example.com"
+      # smtp_port: "587"
     secrets: inherit
 ----
 
@@ -530,7 +578,7 @@ Gets the status of an existing AWS server.
 ----
 jobs:
   status_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_status_server.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_status_server.yml@v1.9.0
     secrets: inherit
 ----
 
@@ -587,7 +635,7 @@ Retrieves Docker logs from the AWS instance and uploads them as an artifact.
 ----
 jobs:
   get_logs:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.9.0
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       bonita_service: "bonita"
@@ -604,31 +652,31 @@ on:
 
 jobs:
   prerequisites:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.9.0
     secrets: inherit
 
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.9.0
     secrets: inherit
 
   build_sca:
     needs: [prerequisites, create_server]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.9.0
     secrets: inherit
 
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.9.0
     secrets: inherit
 
   run_tests:
     needs: [deploy_sca, prerequisites]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.9.0
     secrets: inherit
 
   run_datagen:
     needs: [deploy_sca, prerequisites]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.8.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_datagen.yml@v1.9.0
     secrets: inherit
 ----
 
