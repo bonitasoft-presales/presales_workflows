@@ -1,9 +1,6 @@
 name: Test PR Merged
 
 on:
-  pull_request:
-    types:
-      - closed
   workflow_dispatch:
     inputs:
       repository_name:

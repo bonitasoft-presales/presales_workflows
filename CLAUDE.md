@@ -215,9 +215,37 @@ jobs:
 ```
 
 **Behavior:**
-- When a PR is **merged**: Logs PR details with merge commit SHA
-- When a PR is **closed without merging**: Logs PR details and indicates it was not merged
-- Checks the status of the AWS server associated with the PR branch and uploads instance information as an artifact
+- When a PR is **merged**: Displays PR details with merge commit SHA in a formatted markdown table
+- When a PR is **closed without merging**: Displays PR details and status in a formatted markdown table
+- Computes and displays the AWS stack ID based on repository and branch names
+- Checks the status of the AWS server associated with the PR branch
+- Displays AWS server information (DNS, region, stack ID) in a formatted markdown table
+- Uploads instance information as an artifact
+- Exports job outputs: `aws_public_dns` and `stack_id` for downstream consumption
+
+**Output Format:**
+All outputs are displayed as readable GitHub Actions step summaries with formatted markdown tables instead of plain text logs.
+
+#### Test Workflows for PR Closed
+
+Two test workflows are available for testing the PR closed handler:
+
+**`test_pr_closed_job.yml`** - Automatic testing
+- Triggers automatically on PR closure events (`pull_request.types: closed`)
+- Uses actual PR event data from GitHub
+- Tests the workflow in real PR scenarios
+
+**`test_pr_merged.yml`** - Manual testing
+- Triggers via `workflow_dispatch` only
+- Accepts custom parameters for testing different scenarios
+- Useful for testing without creating actual PRs
+- Parameters: `pr_number`, `pr_title`, `pr_merged`, `pr_base_ref`, `pr_head_ref`, `pr_actor_login`, `pr_merge_commit_sha`
+
+**To manually test:**
+1. Go to Actions tab → "Test PR Merged" workflow
+2. Click "Run workflow"
+3. Fill in test parameters
+4. Run to see the formatted outputs
 
 ### Complete Example: Full Deployment Pipeline
 
