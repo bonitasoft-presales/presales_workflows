@@ -26,7 +26,7 @@ on:
       pr_actor_login:
         description: 'User who merged or closed the PR'
         required: true
-        type: stringupdate
+        type: string
       pr_merge_commit_sha:
         description: 'Merge commit SHA (empty if not merged)'
         required: false
