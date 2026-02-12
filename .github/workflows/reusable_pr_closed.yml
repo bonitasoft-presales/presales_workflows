@@ -227,17 +227,35 @@ jobs:
           modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
           modifiedBranch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')
           stackId="${modifiedRepo}_${modifiedBranch}"
-          echo "stackId: ${stackId}"
           echo "stackId=${stackId}" >> $GITHUB_OUTPUT
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ### 🏷️ AWS Stack ID
+
+          | Property | Value |
+          |----------|-------|
+          | **Repository** | ${{ github.repository }} |
+          | **Branch** | \`${{ github.ref_name }}\` |
+          | **Stack ID** | \`${stackId}\` |
+          EOF
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
 
-      - name: Status of AWS server
+      - name: Get AWS lib
         run: |
           # get aws presales lib
           ./mvnw --batch-mode --no-transfer-progress dependency:copy -Dartifact=com.bonitasoft.presales.aws:bonita-aws:${{ inputs.bonita_aws_version }}:jar:jar-with-dependencies -DoutputDirectory=.
-          # create server
+
+      - name: Status of AWS server
+        run: |
           java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
           -c status \
+          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
+          --key-name ${{ inputs.key_name }} 
+
+      - name: Delete AWS server
+        run: |
+          java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
+          -c delete \
           --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
           --key-name ${{ inputs.key_name }} \
