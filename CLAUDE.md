@@ -68,7 +68,7 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 | `reusable_run_it.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_get_bonita_logs.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
-| `reusable_pr_closed.yml` | None |
+| `reusable_pr_closed.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY` |
 
 ### Secret Descriptions
 
@@ -179,6 +179,7 @@ jobs:
 The `reusable_pr_closed.yml` workflow handles PR closure events and distinguishes between merged and closed-without-merge scenarios.
 
 **Inputs:**
+- `repository_name` (required): Repository name (e.g., owner/repo)
 - `pr_number` (required): PR number
 - `pr_title` (required): PR title
 - `pr_merged` (required): Whether the PR was merged (boolean)
@@ -186,6 +187,9 @@ The `reusable_pr_closed.yml` workflow handles PR closure events and distinguishe
 - `pr_head_ref` (required): Head branch name
 - `pr_actor_login` (required): User who merged or closed the PR
 - `pr_merge_commit_sha` (optional): Merge commit SHA (empty if not merged)
+- `aws_region` (optional): AWS region (default: 'eu-west-1')
+- `key_name` (optional): AWS key pair name (default: 'presale-ci-eu-west-1')
+- `bonita_aws_version` (optional): Version of bonita-aws library (default: '1.8')
 
 **Example usage:**
 ```yaml
@@ -199,6 +203,7 @@ jobs:
   handle_pr:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_pr_closed.yml@v1.8.0
     with:
+      repository_name: ${{ github.repository }}
       pr_number: ${{ github.event.pull_request.number }}
       pr_title: ${{ github.event.pull_request.title }}
       pr_merged: ${{ github.event.pull_request.merged }}
@@ -206,11 +211,13 @@ jobs:
       pr_head_ref: ${{ github.event.pull_request.head.ref }}
       pr_actor_login: ${{ github.event.pull_request.merged && github.event.pull_request.merged_by.login || github.event.pull_request.user.login }}
       pr_merge_commit_sha: ${{ github.event.pull_request.merge_commit_sha }}
+    secrets: inherit
 ```
 
 **Behavior:**
 - When a PR is **merged**: Logs PR details with merge commit SHA
 - When a PR is **closed without merging**: Logs PR details and indicates it was not merged
+- Checks the status of the AWS server associated with the PR branch and uploads instance information as an artifact
 
 ### Complete Example: Full Deployment Pipeline
 
