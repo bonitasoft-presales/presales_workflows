@@ -105,7 +105,7 @@ jobs:
           | **Head branch** | \`${{ inputs.pr_head_ref }}\` |
           | **Status** | Closed without merging (possibly rejected or abandoned) |
           EOF
-  server_status:
+  delete_server:
     runs-on: ubuntu-latest
     outputs:
       aws_public_dns: ${{ steps.read-yaml.outputs.publicDnsName }}
