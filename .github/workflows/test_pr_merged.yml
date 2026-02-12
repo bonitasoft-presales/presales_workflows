@@ -5,17 +5,54 @@ on:
     types:
       - closed
   workflow_dispatch:
+    inputs:
+      repository_name:
+        description: 'Repository name (e.g., owner/repo)'
+        required: false
+        type: string
+        default: ''
+      pr_number:
+        description: 'PR number'
+        required: true
+        type: number
+      pr_title:
+        description: 'PR title'
+        required: true
+        type: string
+      pr_merged:
+        description: 'Whether the PR was merged'
+        required: true
+        type: boolean
+        default: true
+      pr_base_ref:
+        description: 'Base branch'
+        required: true
+        type: string
+        default: 'main'
+      pr_head_ref:
+        description: 'Head branch'
+        required: true
+        type: string
+      pr_actor_login:
+        description: 'User who merged or closed the PR'
+        required: true
+        type: string
+      pr_merge_commit_sha:
+        description: 'Merge commit SHA (empty if not merged)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   handle_pr_closed:
     uses: ./.github/workflows/reusable_pr_closed.yml
     with:
-      repository_name: ${{ github.repository }}
-      pr_number: ${{ github.event.pull_request.number }}
-      pr_title: ${{ github.event.pull_request.title }}
-      pr_merged: ${{ github.event.pull_request.merged }}
-      pr_base_ref: ${{ github.event.pull_request.base.ref }}
-      pr_head_ref: ${{ github.event.pull_request.head.ref }}
-      pr_actor_login: ${{ github.event.pull_request.merged && github.event.pull_request.merged_by.login || github.event.pull_request.user.login }}
-      pr_merge_commit_sha: ${{ github.event.pull_request.merge_commit_sha }}
+      repository_name: ${{ inputs.repository_name || github.repository }}
+      pr_number: ${{ inputs.pr_number || github.event.pull_request.number }}
+      pr_title: ${{ inputs.pr_title || github.event.pull_request.title }}
+      pr_merged: ${{ inputs.pr_merged != null && inputs.pr_merged || github.event.pull_request.merged }}
+      pr_base_ref: ${{ inputs.pr_base_ref || github.event.pull_request.base.ref }}
+      pr_head_ref: ${{ inputs.pr_head_ref || github.event.pull_request.head.ref }}
+      pr_actor_login: ${{ inputs.pr_actor_login || (github.event.pull_request.merged && github.event.pull_request.merged_by.login || github.event.pull_request.user.login) }}
+      pr_merge_commit_sha: ${{ inputs.pr_merge_commit_sha || github.event.pull_request.merge_commit_sha }}
     secrets: inherit
