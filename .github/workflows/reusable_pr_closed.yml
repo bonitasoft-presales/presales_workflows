@@ -3,6 +3,10 @@ name: PR Closed Reusable action
 on:
   workflow_call:
     inputs:
+      repository_name:
+        description: 'Repository name (e.g., owner/repo)'
+        required: true
+        type: string
       pr_number:
         description: 'PR number'
         required: true
@@ -32,6 +36,34 @@ on:
         required: false
         type: string
         default: ''
+      aws_region:
+        description: 'AWS region'
+        type: string
+        required: false
+        default: 'eu-west-1'
+      key_name:
+        description: 'AWS key pair name'
+        type: string
+        required: false
+        default: 'presale-ci-eu-west-1'
+      bonita_aws_version:
+        description: 'Version of bonita-aws library'
+        type: string
+        required: false
+        default: '1.8'
+    secrets:
+      JFROG_USER:
+        required: true
+      JFROG_TOKEN:
+        required: true
+      GHP_USER:
+        required: true
+      GHP_TOKEN:
+        required: true
+      AWS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY:
+        required: true
 
 jobs:
   if_merged:
@@ -40,13 +72,19 @@ jobs:
     steps:
       - name: PR was merged
         run: |
-          echo "✅ The PR was merged"
-          echo "PR Number: ${{ inputs.pr_number }}"
-          echo "PR Title: ${{ inputs.pr_title }}"
-          echo "Merged by: ${{ inputs.pr_actor_login }}"
-          echo "Base branch: ${{ inputs.pr_base_ref }}"
-          echo "Head branch: ${{ inputs.pr_head_ref }}"
-          echo "Merge commit SHA: ${{ inputs.pr_merge_commit_sha }}"
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## ✅ Pull Request Merged
+
+          | Property | Value |
+          |----------|-------|
+          | **Repository** | ${{ inputs.repository_name }} |
+          | **PR Number** | #${{ inputs.pr_number }} |
+          | **PR Title** | ${{ inputs.pr_title }} |
+          | **Merged by** | @${{ inputs.pr_actor_login }} |
+          | **Base branch** | \`${{ inputs.pr_base_ref }}\` |
+          | **Head branch** | \`${{ inputs.pr_head_ref }}\` |
+          | **Merge commit SHA** | \`${{ inputs.pr_merge_commit_sha }}\` |
+          EOF
 
   if_closed_without_merge:
     if: inputs.pr_merged == false
@@ -54,10 +92,190 @@ jobs:
     steps:
       - name: PR was closed without merging
         run: |
-          echo "❌ The PR was closed without merging"
-          echo "PR Number: ${{ inputs.pr_number }}"
-          echo "PR Title: ${{ inputs.pr_title }}"
-          echo "Closed by: ${{ inputs.pr_actor_login }}"
-          echo "Base branch: ${{ inputs.pr_base_ref }}"
-          echo "Head branch: ${{ inputs.pr_head_ref }}"
-          echo "Reason: PR was closed without merging (possibly rejected or abandoned)"
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## ❌ Pull Request Closed Without Merging
+
+          | Property | Value |
+          |----------|-------|
+          | **Repository** | ${{ inputs.repository_name }} |
+          | **PR Number** | #${{ inputs.pr_number }} |
+          | **PR Title** | ${{ inputs.pr_title }} |
+          | **Closed by** | @${{ inputs.pr_actor_login }} |
+          | **Base branch** | \`${{ inputs.pr_base_ref }}\` |
+          | **Head branch** | \`${{ inputs.pr_head_ref }}\` |
+          | **Status** | Closed without merging (possibly rejected or abandoned) |
+          EOF
+  server_status:
+    runs-on: ubuntu-latest
+    outputs:
+      aws_public_dns: ${{ steps.read-yaml.outputs.publicDnsName }}
+      stack_id: ${{ steps.aws_stack_id.outputs.stackId }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Setup maven private repositories
+        uses: whelk-io/maven-settings-xml-action@v22
+        with:
+          repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              },
+              {
+                "id": "github-presales",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/bonitasoft-presales/*",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "true"
+                }
+              },
+              {
+                "id": "github-laurent",
+                "name": "github-presales",
+                "url": "https://maven.pkg.github.com/laurentleseigneur/*",
+                "releases": {
+                 "enabled": "true"
+                },
+                "snapshots": {
+                 "enabled": "true"
+                }
+              }
+            ]
+          plugin_repositories: >
+            [
+              {
+                "id": "bar",
+                "name": "Bonita Artifact Repository",
+                "url": "https://bonitasoft.jfrog.io/artifactory/releases",
+                "releases": {
+                  "enabled": "true"
+                },
+                "snapshots": {
+                  "enabled": "false"
+                }
+              }
+            ]
+          servers: >
+            [
+              {
+                "id": "bar",
+                "username": "${{ secrets.JFROG_USER }}",
+                "password": "${{ secrets.JFROG_TOKEN }}"
+              },
+              {
+                "id": "github-presales",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              },
+              {
+                "id": "github-laurent",
+                "username": "${{ secrets.GHP_USER }}",
+                "password": "${{ secrets.GHP_TOKEN }}"
+              }
+            ]
+
+      - name: Create AWS config credential folder
+        run: |
+          mkdir -p /home/runner/.aws
+          ls -ltr /home/runner/.aws
+
+      - name: Create AWS config region file
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '/home/runner/.aws'
+          isAbsolutePath: true
+          file: 'config'
+          content: |
+            [default]
+            region = ${{ inputs.aws_region }}
+
+      - name: Create AWS config credential file
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '/home/runner/.aws'
+          isAbsolutePath: true
+          file: 'credentials'
+          content: |
+            [default]
+            aws_access_key_id = ${{ secrets.AWS_KEY_ID }}
+            aws_secret_access_key = ${{ secrets.AWS_ACCESS_KEY }}
+            region = ${{ inputs.aws_region }}
+
+      - name: Set AWS stack ID
+        id: aws_stack_id
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
+          modifiedBranch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')
+          stackId="${modifiedRepo}_${modifiedBranch}"
+          echo "stackId: ${stackId}"
+          echo "stackId=${stackId}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+
+      - name: Status of AWS server
+        run: |
+          # get aws presales lib
+          ./mvnw --batch-mode --no-transfer-progress dependency:copy -Dartifact=com.bonitasoft.presales.aws:bonita-aws:${{ inputs.bonita_aws_version }}:jar:jar-with-dependencies -DoutputDirectory=.
+          # create server
+          java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
+          -c status \
+          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
+          --key-name ${{ inputs.key_name }} \
+
+      - name: Copy aws yaml file
+        run: |
+          ls -ltr ${{ github.workspace }}/${{ steps.aws_stack_id.outputs.stackId }}.yaml
+          cp ${{ github.workspace }}/${{ steps.aws_stack_id.outputs.stackId }}.yaml ${{ github.workspace }}/aws_instance.yaml
+          ls -ltr ${{ github.workspace }}/aws_instance.yaml
+
+      - name: Archive artifact instance.yaml file
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws_instance
+          path: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: read-yaml-file
+        uses: pietrobolcato/action-read-yaml@1.1.0
+        id: read-yaml
+        with:
+          config: ${{ github.workspace }}/aws_instance.yaml
+
+      - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
+        id: set-env-variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
+
+      - name: Display AWS server status
+        id: display-server-status
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🖥️ AWS Server Status
+
+          | Property | Value |
+          |----------|-------|
+          | **Repository** | ${{ inputs.repository_name }} |
+          | **Branch** | \`${{ github.ref_name }}\` |
+          | **Public DNS** | \`${AWS_PUBLIC_DNS_HOSTNAME}\` |
+          | **Region** | ${{ inputs.aws_region }} |
+          | **Stack ID** | ${{ steps.aws_stack_id.outputs.stackId }} |
+          EOF 

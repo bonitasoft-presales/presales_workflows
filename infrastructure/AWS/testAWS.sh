@@ -13,13 +13,6 @@ echo "PROJECT_FOLDER: [${PROJECT_FOLDER}]"
 
 bonitaAwsVersion="1.8"
 keyName="presale-ci-eu-west-1"
-securityGroup="bonitasoft_presales"
-bonitaEnvironment="integration"
-# ubuntu server 2024.04 LTS x86
-amiId="ami-0776c814353b4814d"
-#instance type
-instanceType="t3.large"
-diskSize="20"
 
 rm -rf ${WORK_FOLDER}
 mkdir -p ${WORK_FOLDER}
