@@ -1,5 +1,37 @@
 = Changelog
 
+== v1.10.0 (2026-02-12)
+
+=== Features
+
+* **Enhanced PR Closed Workflow** (`reusable_pr_closed.yml`)
+  - Added `repository_name` as required input to track which repository the PR belongs to
+  - Added `server_status` job that checks AWS server status and outputs DNS/stack information
+  - Added AWS-related inputs with defaults: `aws_region`, `key_name`, `bonita_aws_version`
+  - Declared required secrets: `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`
+  - Job outputs: `aws_public_dns` and `stack_id` for downstream consumption
+  - Uploads `aws_instance.yaml` artifact with instance information
+
+* **Readable Markdown Outputs**
+  - Replaced all `echo` commands with GitHub Actions step summaries
+  - Formatted markdown tables for PR merged/closed information
+  - Formatted markdown table for AWS stack ID display
+  - Formatted markdown table for AWS server status (DNS, region, stack ID)
+  - All outputs displayed as readable tables in GitHub Actions UI
+
+* **Split Test Workflows**
+  - `test_pr_closed_job.yml` - Automatic testing on PR closure events
+  - `test_pr_merged.yml` - Manual testing via workflow_dispatch with custom parameters
+  - Better separation of concerns between integration testing and manual testing
+
+=== Documentation
+
+* Updated CLAUDE.md with complete PR closed workflow documentation
+* Added behavior description for formatted markdown outputs
+* Documented AWS stack ID computation and display
+* Added comprehensive test workflows section
+* Clarified output format for all workflow summaries
+
 == v1.9.0 (2026-02-07)
 
 === Features
