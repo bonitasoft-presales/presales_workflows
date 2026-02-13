@@ -110,7 +110,27 @@ jobs:
     outputs:
       aws_public_dns: ${{ steps.read-yaml.outputs.publicDnsName }}
       stack_id: ${{ steps.aws_stack_id.outputs.stackId }}
+      pr_identifier: ${{ steps.pr_identifier.outputs.pr_id }}
     steps:
+      - name: Split repository name into owner and repo
+        id: split_repo
+        run: |
+          OWNER="${{ inputs.repository_name%%/*}}"
+          REPO="${{ inputs.repository_name#*/}}"
+          echo "owner=${OWNER}" >> $GITHUB_OUTPUT
+          echo "repo=${REPO}" >> $GITHUB_OUTPUT
+          echo "Repository owner: ${OWNER}"
+          echo "Repository name: ${REPO}"
+
+      - name: Generate PR identifier
+        id: pr_identifier
+        run: |
+          REPO="${{ steps.split_repo.outputs.repo }}"
+          PR_NUMBER="${{ inputs.pr_number }}"
+          PR_ID="${REPO}_${PR_NUMBER}-merge"
+          echo "pr_id=${PR_ID}" >> $GITHUB_OUTPUT
+          echo "PR Identifier: ${PR_ID}"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -223,23 +243,22 @@ jobs:
       - name: Set AWS stack ID
         id: aws_stack_id
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
-          modifiedBranch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')
-          stackId="${modifiedRepo}_${modifiedBranch}"
-          echo "stackId=${stackId}" >> $GITHUB_OUTPUT
+          OWNER="${{ steps.split_repo.outputs.owner }}"
+          REPO="${{ steps.split_repo.outputs.repo }}"
+          PR_ID="${{ steps.pr_identifier.outputs.pr_id }}"
+          echo "stackId=${PR_ID}" >> $GITHUB_OUTPUT
 
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ### 🏷️ AWS Stack ID
 
           | Property | Value |
           |----------|-------|
-          | **Repository** | ${{ github.repository }} |
-          | **Branch** | \`${{ github.ref_name }}\` |
-          | **Stack ID** | \`${stackId}\` |
+          | **Owner** | \`${OWNER}\` |
+          | **Repository** | \`${REPO}\` |
+          | **PR Number** | #${{ inputs.pr_number }} |
+          | **Branch** | \`${{ inputs.pr_head_ref }}\` |
+          | **Stack ID (PR-based)** | \`${PR_ID}\` |
           EOF
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Get AWS lib
         run: |
@@ -250,12 +269,12 @@ jobs:
         run: |
           java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
           -c status \
-          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
-          --key-name ${{ inputs.key_name }} 
+          --stack-id ${{ steps.pr_identifier.outputs.pr_id }} \
+          --key-name ${{ inputs.key_name }}
 
       - name: Delete AWS server
         run: |
           java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
           -c delete \
-          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
+          --stack-id ${{ steps.pr_identifier.outputs.pr_id }} \
           --key-name ${{ inputs.key_name }} \
