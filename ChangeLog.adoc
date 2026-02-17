@@ -1,85 +1,38 @@
 = Changelog
 
-== v1.10.0 (2026-02-12)
+== Version 1.10.0 (2026-02-17)
 
 === Features
 
-* **Enhanced PR Closed Workflow** (`reusable_pr_closed.yml`)
-  - Added `repository_name` as required input to track which repository the PR belongs to
-  - Added `server_status` job that checks AWS server status and outputs DNS/stack information
-  - Added AWS-related inputs with defaults: `aws_region`, `key_name`, `bonita_aws_version`
-  - Declared required secrets: `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`
-  - Job outputs: `aws_public_dns` and `stack_id` for downstream consumption
-  - Uploads `aws_instance.yaml` artifact with instance information
+* *PR Closed Workflow Enhancement*: Use PR-based stack ID for AWS operations
+** Split `repository_name` into separate `owner` and `repo` variables
+** Generate PR identifier in format: `{repo}_{pr_number}-merge`
+** Use PR identifier as stack ID for AWS status and delete operations
+** Ensures consistent stack identification based on PR number rather than branch name
 
-* **Readable Markdown Outputs**
-  - Replaced all `echo` commands with GitHub Actions step summaries
-  - Formatted markdown tables for PR merged/closed information
-  - Formatted markdown table for AWS stack ID display
-  - Formatted markdown table for AWS server status (DNS, region, stack ID)
-  - All outputs displayed as readable tables in GitHub Actions UI
+* *Readable Output Improvements*
+** Add formatted markdown tables for AWS stack ID information
+** Display owner, repository, PR number, branch, and stack ID in GitHub Actions summaries
+** Enhanced PR closed handler with better status reporting
 
-* **Split Test Workflows**
-  - `test_pr_closed_job.yml` - Automatic testing on PR closure events
-  - `test_pr_merged.yml` - Manual testing via workflow_dispatch with custom parameters
-  - Better separation of concerns between integration testing and manual testing
+* *Split Test Workflows*
+** Separate test workflows for better organization and maintainability
+** Add `test_pr_closed_job.yml` for automatic PR closure testing
+** Add `test_pr_merged.yml` for manual workflow_dispatch testing
+** Include realistic default parameters for easier testing
+
+=== Fixes
+
+* Fix bash parameter expansion syntax in repository name splitting
+* Fix workflow_dispatch input type conversion issues for number and boolean types
+* Correct expression evaluation for test workflows
 
 === Documentation
 
-* Updated CLAUDE.md with complete PR closed workflow documentation
-* Added behavior description for formatted markdown outputs
-* Documented AWS stack ID computation and display
-* Added comprehensive test workflows section
-* Clarified output format for all workflow summaries
+* Update CLAUDE.md with v1.10.0 references
+* Document PR-based stack ID format and usage
+* Add examples for test workflows
 
-== v1.9.0 (2026-02-07)
+== Version 1.9.0
 
-=== Features
-
-* Added configurable parameters to data generation workflow (`reusable_run_datagen.yml`)
-  - `datagen_folder` input parameter (default: `"datagen"`) - allows customization of data generation project folder location
-  - `bonita_dns` input parameter (defaults to AWS instance DNS) - specify custom Bonita server DNS
-  - `bonita_port` input parameter (default: `"8081"`) - configure Bonita server port (e.g., `"80"` for proxy)
-  - `smtp_server` input parameter (default: `"greenmail"`) - customize SMTP server for email testing
-  - `smtp_port` input parameter (default: `"3025"`) - customize SMTP port
-  - Optional Salesforce secrets support (`SF_USERNAME`, `SF_PASSWORD`, `SF_TOKEN`)
-  - All parameters are optional with sensible defaults, maintaining backward compatibility
-* Enhanced environment variable display in datagen workflow for improved debugging
-  - Now displays `BONITA_DNS`, `BONITA_PORT`, and constructed `BONITA_URL`
-
-== v1.8.0 (2026-02-03)
-
-=== Features
-
-* Added configurable `uib_folder` parameter to UIB deployment workflows
-  - Both `reusable_deploy_uib.yml` and `reusable_deploy_uib_aws.yml` now accept an optional `uib_folder` input parameter
-  - Default value changed from `uib` to `app/web_applications` to match Bonita studio project structure
-  - Parameter is optional and maintains backward compatibility
-  - Allows customization of UIB applications folder location per deployment
-
-== v1.7.1 (2026-01-29)
-
-=== Bug Fixes
-
-* Fixed Maven build command in `reusable_build_sca.yml` to use `clean install` instead of `clean package`
-  - This resolves build issues with BDM (Business Data Model) dependencies in Bonita 2025.2
-  - The `install` goal ensures all project artifacts are installed to the local Maven repository before packaging
-
-== v1.7.0 (2026-01-20)
-
-* Updated documentation with comprehensive workflow reference
-* Added release guidelines
-* Fixed documentation inconsistencies
-* Added missing test workflows
-
-== v1.6.0 (2025-12-11)
-
-* Previous release
-
-== v1.5.1 (2025-12-05)
-
-* Previous release
-
-== v1.5.0 (2025-11-27)
-
-* Previous release
+Previous release with configurable datagen parameters and PR closed workflow enhancements.
