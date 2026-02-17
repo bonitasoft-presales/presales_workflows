@@ -7,38 +7,42 @@ on:
         description: 'Repository name (e.g., owner/repo)'
         required: false
         type: string
-        default: ''
+        default: 'bonitasoft-presales/presales-BPM-Template'
       pr_number:
         description: 'PR number'
-        required: true
+        required: false
         type: number
+        default: 57
       pr_title:
         description: 'PR title'
-        required: true
+        required: false
         type: string
+        default: 'Test PR for merge workflow'
       pr_merged:
         description: 'Whether the PR was merged'
-        required: true
+        required: false
         type: boolean
         default: true
       pr_base_ref:
         description: 'Base branch'
-        required: true
+        required: false
         type: string
         default: 'main'
       pr_head_ref:
         description: 'Head branch'
-        required: true
+        required: false
         type: string
+        default: 'feature/test-branch'
       pr_actor_login:
         description: 'User who merged or closed the PR'
-        required: true
+        required: false
         type: string
+        default: 'test-user'
       pr_merge_commit_sha:
         description: 'Merge commit SHA (empty if not merged)'
         required: false
         type: string
-        default: ''
+        default: 'abc123def456'
 
 jobs:
   handle_pr_closed:

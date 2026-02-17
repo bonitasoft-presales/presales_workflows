@@ -115,8 +115,9 @@ jobs:
       - name: Split repository name into owner and repo
         id: split_repo
         run: |
-          OWNER="${{ inputs.repository_name%%/*}}"
-          REPO="${{ inputs.repository_name#*/}}"
+          REPO_NAME="${{ inputs.repository_name }}"
+          OWNER="${REPO_NAME%%/*}"
+          REPO="${REPO_NAME#*/}"
           echo "owner=${OWNER}" >> $GITHUB_OUTPUT
           echo "repo=${REPO}" >> $GITHUB_OUTPUT
           echo "Repository owner: ${OWNER}"
