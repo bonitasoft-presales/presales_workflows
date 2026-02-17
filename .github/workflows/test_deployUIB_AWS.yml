@@ -12,5 +12,6 @@ jobs:
     uses: ./.github/workflows/reusable_deploy_uib_aws.yml
     with:
       bonita_dns_name: ${{ inputs.bonita_dns_name }}
+      uib_folder: uib
     secrets: inherit
 
