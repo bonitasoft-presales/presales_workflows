@@ -22,8 +22,7 @@ on:
         required: true
       AWS_SSH_USER:
         required: true
-#NOTE: some time we get 502 Bad gateway errors
-#workaround: replay faild job
+
 jobs:
   deploy_UIB_AWS:
     runs-on: ubuntu-latest
@@ -71,6 +70,31 @@ jobs:
         with:
           aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
           port_range: '22'
+
+      - name: Wait for UIB container to be ready
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} << 'EOF'
+            echo "Waiting for UIB container to accept requests..."
+            MAX_RETRIES=60
+            RETRY_DELAY=5
+            RETRY_COUNT=0
+
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/uib/ || echo "000")
+
+              if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "302" ] || [ "$HTTP_CODE" = "401" ]; then
+                echo "✅ UIB is ready! (HTTP $HTTP_CODE)"
+                exit 0
+              fi
+
+              echo "⏳ UIB not ready yet (HTTP $HTTP_CODE). Retry $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+              sleep $RETRY_DELAY
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            done
+
+            echo "❌ UIB container did not become ready within $((MAX_RETRIES * RETRY_DELAY)) seconds"
+            exit 1
+          EOF
 
       - name: Transfer UIB data
         run: |
