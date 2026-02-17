@@ -1,37 +1,43 @@
 = Changelog
 
-== Version 1.10.0 (2026-02-17)
+== Version 1.11.0 (2026-02-17)
 
 === Features
 
-* *PR Closed Workflow Enhancement*: Use PR-based stack ID for AWS operations
+* *PR-based Stack ID for AWS Operations*
 ** Split `repository_name` into separate `owner` and `repo` variables
 ** Generate PR identifier in format: `{repo}_{pr_number}-merge`
 ** Use PR identifier as stack ID for AWS status and delete operations
 ** Ensures consistent stack identification based on PR number rather than branch name
-
-* *Readable Output Improvements*
-** Add formatted markdown tables for AWS stack ID information
-** Display owner, repository, PR number, branch, and stack ID in GitHub Actions summaries
-** Enhanced PR closed handler with better status reporting
-
-* *Split Test Workflows*
-** Separate test workflows for better organization and maintainability
-** Add `test_pr_closed_job.yml` for automatic PR closure testing
-** Add `test_pr_merged.yml` for manual workflow_dispatch testing
-** Include realistic default parameters for easier testing
+** Add `pr_identifier` as job output for downstream consumption
 
 === Fixes
 
-* Fix bash parameter expansion syntax in repository name splitting
+* Fix bash parameter expansion syntax in repository name splitting (cannot use `%%` inside `${{ }}`)
 * Fix workflow_dispatch input type conversion issues for number and boolean types
-* Correct expression evaluation for test workflows
+* Simplify test workflow expressions to use `github.event.inputs` with `fromJSON()`
+* Add realistic default parameters to test_pr_merged.yml
 
 === Documentation
 
-* Update CLAUDE.md with v1.10.0 references
-* Document PR-based stack ID format and usage
+* Update CLAUDE.md with PR-based stack ID documentation
+* Document new variables and outputs
 * Add examples for test workflows
+
+== Version 1.10.0 (2026-02-12)
+
+=== Features
+
+* Enhanced PR Closed Workflow with `repository_name` input
+* Added server status checking with AWS information outputs
+* Readable markdown outputs with formatted tables for PR and AWS information
+* Split test workflows: `test_pr_closed_job.yml` and `test_pr_merged.yml`
+
+=== Documentation
+
+* Updated CLAUDE.md with complete PR closed workflow documentation
+* Added behavior description for formatted outputs
+* Documented AWS stack ID computation
 
 == Version 1.9.0
 
