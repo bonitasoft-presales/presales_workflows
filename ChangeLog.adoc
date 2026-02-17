@@ -1,5 +1,27 @@
 = Changelog
 
+== Version 1.12.0 (2026-02-17)
+
+=== Features
+
+* *UIB AWS Deployment Health Check*
+** Added automatic health check that waits for UIB container to be ready before deploying
+** Polls `http://localhost/uib/` endpoint every 5 seconds
+** Accepts HTTP status codes: 200 (OK), 302 (Redirect), or 401 (Unauthorized)
+** 5-minute timeout (300 seconds) with retry mechanism
+** Eliminates 502 Bad Gateway errors that previously required manual job replay
+
+* *Test Workflow Improvements*
+** Enhanced test job configurations with additional parameters
+** Removed unnecessary jobs for better workflow efficiency
+
+=== Documentation
+
+* Updated CLAUDE.md with UIB health check documentation
+* Updated all version references to v1.11.0 and v1.12.0
+* Documented health check behavior, timeout, and accepted status codes
+* Added health check section to UIB deployment workflows documentation
+
 == Version 1.11.0 (2026-02-17)
 
 === Features
