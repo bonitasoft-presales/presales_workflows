@@ -76,13 +76,16 @@ jobs:
           def uptime(launch_time):
               if not launch_time:
                   return "-"
-              if hasattr(launch_time, "tzinfo"):
-                  lt = launch_time if launch_time.tzinfo else launch_time.replace(tzinfo=timezone.utc)
-              else:
-                  lt = datetime.fromisoformat(str(launch_time).replace("Z", "+00:00"))
-              delta = datetime.now(timezone.utc) - lt
-              h, m = divmod(delta.seconds // 60, 60)
-              return f"{delta.days}d {h}h {m}m"
+              try:
+                  if hasattr(launch_time, "tzinfo"):
+                      lt = launch_time if launch_time.tzinfo else launch_time.replace(tzinfo=timezone.utc)
+                  else:
+                      lt = datetime.fromisoformat(str(launch_time).replace("Z", "+00:00"))
+                  delta = datetime.now(timezone.utc) - lt
+                  h, m = divmod(delta.seconds // 60, 60)
+                  return f"{delta.days}d {h}h {m}m"
+              except Exception:
+                  return str(launch_time)
 
           lines = [
               "## AWS Instances",
