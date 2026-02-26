@@ -90,8 +90,8 @@ jobs:
           lines = [
               "## AWS Instances",
               "",
-              "| Name | Status | Public DNS | Private DNS | Security Group | Launch Time |",
-              "|------|--------|------------|-------------|----------------|-------------|",
+              "| Name | Status | DNS | Launch Time |",
+              "|------|--------|-----|-------------|",
           ]
 
           for i in instances:
@@ -99,12 +99,12 @@ jobs:
               status      = (i.get("state") or {}).get("name", "-")
               public_dns  = i.get("publicDnsName") or "-"
               private_dns = i.get("privateDnsName") or "-"
-              sg          = ", ".join(g.get("groupName", "") for g in (i.get("securityGroups") or [])) or "-"
+              dns         = f"{public_dns}<br>{private_dns}"
               launch      = format_launch_time(i.get("launchTime"))
-              lines.append(f"| {name} | {status} | {public_dns} | {private_dns} | {sg} | {launch} |")
+              lines.append(f"| {name} | {status} | {dns} | {launch} |")
 
           if not instances:
-              lines.append("| — | No instances found | — | — | — | — |")
+              lines.append("| — | No instances found | — | — |")
 
           summary = os.environ.get("GITHUB_STEP_SUMMARY")
           with open(summary, "a") as f:
