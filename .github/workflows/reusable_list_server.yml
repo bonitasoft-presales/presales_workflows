@@ -55,3 +55,55 @@ jobs:
           java -jar bonita-aws-${bonitaAwsVersion}-jar-with-dependencies.jar \
           -c list \
           --key-name ${keyName}
+
+      - name: Display instances table
+        run: |
+          python3 << 'EOF'
+          import yaml, os
+          from datetime import datetime, timezone
+
+          with open("instances.yaml") as f:
+              data = yaml.safe_load(f)
+
+          instances = [i for group in (data or []) for i in (group or [])]
+
+          def get_tag(tags, key):
+              for t in (tags or []):
+                  if t.get("key") == key:
+                      return t.get("value", "")
+              return ""
+
+          def uptime(launch_time):
+              if not launch_time:
+                  return "-"
+              if hasattr(launch_time, "tzinfo"):
+                  lt = launch_time if launch_time.tzinfo else launch_time.replace(tzinfo=timezone.utc)
+              else:
+                  lt = datetime.fromisoformat(str(launch_time).replace("Z", "+00:00"))
+              delta = datetime.now(timezone.utc) - lt
+              h, m = divmod(delta.seconds // 60, 60)
+              return f"{delta.days}d {h}h {m}m"
+
+          lines = [
+              "## AWS Instances",
+              "",
+              "| Name | Status | Public DNS | Private DNS | Security Group | Uptime |",
+              "|------|--------|------------|-------------|----------------|--------|",
+          ]
+
+          for i in instances:
+              name        = get_tag(i.get("tags"), "Name") or get_tag(i.get("tags"), "bcd:stackId") or "-"
+              status      = (i.get("state") or {}).get("name", "-")
+              public_dns  = i.get("publicDnsName") or "-"
+              private_dns = i.get("privateDnsName") or "-"
+              sg          = ", ".join(g.get("groupName", "") for g in (i.get("securityGroups") or [])) or "-"
+              up          = uptime(i.get("launchTime"))
+              lines.append(f"| {name} | {status} | {public_dns} | {private_dns} | {sg} | {up} |")
+
+          if not instances:
+              lines.append("| — | No instances found | — | — | — | — |")
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          with open(summary, "a") as f:
+              f.write("\n".join(lines) + "\n")
+          EOF
