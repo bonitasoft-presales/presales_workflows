@@ -41,6 +41,8 @@ on:
         required: false
       SF_TOKEN:
         required: false
+      OPENAI_API_KEY:
+        required: false
 jobs:
   run_data_generation:
     runs-on: ubuntu-latest
@@ -197,5 +199,6 @@ jobs:
           -DSMTP_PORT=${{ inputs.smtp_port }} \
           -DSALESFORCE_USERNAME=${{ secrets.SF_USERNAME }} \
           -DSALESFORCE_PASSWORD=${{ secrets.SF_PASSWORD }} \
-          -DSALESFORCE_TOKEN=${{ secrets.SF_TOKEN }}
+          -DSALESFORCE_TOKEN=${{ secrets.SF_TOKEN }} \
+          -DOPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
         

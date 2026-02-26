@@ -66,7 +66,7 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 | `reusable_prerequisites.yml` | None |
 | `reusable_status_server.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY` |
 | `reusable_run_it.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
-| `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
+| `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `SF_USERNAME` (opt), `SF_PASSWORD` (opt), `SF_TOKEN` (opt), `OPENAI_API_KEY` (opt) |
 | `reusable_get_bonita_logs.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
 | `reusable_pr_closed.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY` |
 
@@ -77,6 +77,8 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 - **GitHub Packages**: `GHP_USER`, `GHP_TOKEN` - For GitHub Packages access
 - **Bonita license**: `licence_base64` - Base64-encoded Bonita license
 - **Health check**: `HEALTHZ_USERNAME`, `HEALTHZ_PASSWORD` - For health check authentication
+- **Salesforce**: `SF_USERNAME`, `SF_PASSWORD`, `SF_TOKEN` - Optional Salesforce credentials for data generation
+- **OpenAI**: `OPENAI_API_KEY` - Optional OpenAI API key for data generation
 
 ### How to Pass Secrets When Calling Workflows
 
