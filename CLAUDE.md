@@ -35,6 +35,7 @@ All reusable workflows are in `.github/workflows/` with the naming convention:
 | `reusable_run_datagen.yml` | Runs data generation from `datagen/` folder |
 | `reusable_prerequisites.yml` | Checks for IT and datagen folders existence |
 | `reusable_status_server.yml` | Gets status of existing AWS server |
+| `reusable_list_server.yml` | Lists all AWS servers with formatted markdown table (name, status, DNS, launch time) |
 | `reusable_get_bonita_logs.yml` | Retrieves Docker logs from AWS instance |
 | `reusable_pr_closed.yml` | Handles PR closure events (merged or closed without merge) |
 
@@ -65,6 +66,7 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 | `reusable_deploy_uib_aws.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
 | `reusable_prerequisites.yml` | None |
 | `reusable_status_server.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY` |
+| `reusable_list_server.yml` | `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `GHP_TOKEN` |
 | `reusable_run_it.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `SF_USERNAME` (opt), `SF_PASSWORD` (opt), `SF_TOKEN` (opt), `OPENAI_API_KEY` (opt) |
 | `reusable_get_bonita_logs.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
@@ -96,17 +98,17 @@ on:
 
 jobs:
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.14.0
     secrets: inherit
 
   build_sca:
     needs: create_server
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.14.0
     secrets: inherit
 
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.14.0
     secrets: inherit
 ```
 
@@ -122,7 +124,7 @@ on:
 
 jobs:
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.14.0
     secrets:
       JFROG_USER: ${{ secrets.JFROG_USER }}
       JFROG_TOKEN: ${{ secrets.JFROG_TOKEN }}
@@ -142,14 +144,14 @@ Some workflows require both inputs and secrets:
 ```yaml
 jobs:
   get_logs:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_get_bonita_logs.yml@v1.14.0
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       bonita_service: "bonita"
     secrets: inherit
 
   deploy_uib:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.14.0
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       # Optional: customize UIB folder (defaults to "app/web_applications")
@@ -176,7 +178,7 @@ Both `reusable_deploy_uib.yml` and `reusable_deploy_uib_aws.yml` support:
 ```yaml
 jobs:
   deploy_uib:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_uib_aws.yml@v1.14.0
     with:
       bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
       uib_folder: "uib"  # Use legacy folder structure
@@ -210,7 +212,7 @@ on:
 
 jobs:
   handle_pr:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_pr_closed.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_pr_closed.yml@v1.14.0
     with:
       repository_name: ${{ github.repository }}
       pr_number: ${{ github.event.pull_request.number }}
@@ -265,25 +267,25 @@ on:
 
 jobs:
   prerequisites:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_prerequisites.yml@v1.14.0
 
   create_server:
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.14.0
     secrets: inherit
 
   build_sca:
     needs: [prerequisites, create_server]
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.14.0
     secrets: inherit
 
   deploy_sca:
     needs: build_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_deploy_sca.yml@v1.14.0
     secrets: inherit
 
   run_tests:
     needs: deploy_sca
-    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.13.0
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_run_it.yml@v1.14.0
     secrets: inherit
 ```
 

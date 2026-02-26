@@ -1,5 +1,27 @@
 = Changelog
 
+== Version 1.14.0 (2026-02-26)
+
+=== Features
+
+* *List AWS Servers Workflow*
+** Added `reusable_list_server.yml` workflow using `-c list` command
+** Added `test_list_server.yml` test workflow
+** Displays instances as a formatted markdown table in step summary
+** Columns: Name, Status, DNS (public + private), Launch Time
+** Sorted by status (running first), then launch time (newest first)
+
+* *Replace Maven with GitHub Release Download*
+** Replaced `./mvnw dependency:copy` with `gh release download` from `laurentleseigneur/bonita-aws`
+** Applies to `reusable_create_server.yml`, `reusable_status_server.yml`, `reusable_pr_closed.yml`
+** No longer requires Maven, `pom.xml`, or JFrog credentials to fetch the jar
+** Uses `GHP_TOKEN` for access to the private repository
+
+=== Fixes
+
+* Use `GHP_TOKEN` instead of `github.token` for `gh release download` (private repo access)
+* Fix bonita-aws release tag format to `bonita-aws-X.X`
+
 == Version 1.13.0 (2026-02-26)
 
 === Features
