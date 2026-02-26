@@ -77,7 +77,9 @@ jobs:
               if not launch_time:
                   return "-"
               try:
-                  if hasattr(launch_time, "tzinfo"):
+                  if isinstance(launch_time, (int, float)):
+                      lt = datetime.fromtimestamp(launch_time / 1000, tz=timezone.utc)
+                  elif hasattr(launch_time, "tzinfo"):
                       lt = launch_time if launch_time.tzinfo else launch_time.replace(tzinfo=timezone.utc)
                   else:
                       lt = datetime.fromisoformat(str(launch_time).replace("Z", "+00:00"))
