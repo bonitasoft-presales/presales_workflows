@@ -48,7 +48,7 @@ jobs:
           keyName="presale-ci-eu-west-1"
 
           # get aws presales lib
-          gh release download v${bonitaAwsVersion} \
+          gh release download bonita-aws-${bonitaAwsVersion} \
             --repo laurentleseigneur/bonita-aws \
             --pattern "*-jar-with-dependencies.jar"
           # list servers
