@@ -73,7 +73,7 @@ jobs:
                       return t.get("value", "")
               return ""
 
-          def uptime(launch_time):
+          def format_launch_time(launch_time):
               if not launch_time:
                   return "-"
               try:
@@ -83,17 +83,15 @@ jobs:
                       lt = launch_time if launch_time.tzinfo else launch_time.replace(tzinfo=timezone.utc)
                   else:
                       lt = datetime.fromisoformat(str(launch_time).replace("Z", "+00:00"))
-                  delta = datetime.now(timezone.utc) - lt
-                  h, m = divmod(delta.seconds // 60, 60)
-                  return f"{delta.days}d {h}h {m}m"
+                  return lt.strftime("%Y-%m-%d %H:%M:%S")
               except Exception:
                   return str(launch_time)
 
           lines = [
               "## AWS Instances",
               "",
-              "| Name | Status | Public DNS | Private DNS | Security Group | Uptime |",
-              "|------|--------|------------|-------------|----------------|--------|",
+              "| Name | Status | Public DNS | Private DNS | Security Group | Launch Time |",
+              "|------|--------|------------|-------------|----------------|-------------|",
           ]
 
           for i in instances:
@@ -102,8 +100,8 @@ jobs:
               public_dns  = i.get("publicDnsName") or "-"
               private_dns = i.get("privateDnsName") or "-"
               sg          = ", ".join(g.get("groupName", "") for g in (i.get("securityGroups") or [])) or "-"
-              up          = uptime(i.get("launchTime"))
-              lines.append(f"| {name} | {status} | {public_dns} | {private_dns} | {sg} | {up} |")
+              launch      = format_launch_time(i.get("launchTime"))
+              lines.append(f"| {name} | {status} | {public_dns} | {private_dns} | {sg} | {launch} |")
 
           if not instances:
               lines.append("| — | No instances found | — | — | — | — |")
