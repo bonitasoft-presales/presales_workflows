@@ -144,7 +144,7 @@ jobs:
 
       - name: AWS server status
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GHP_TOKEN }}
         run: |
           bonitaAwsVersion="1.8"
           keyName="presale-ci-eu-west-1"

@@ -263,7 +263,7 @@ jobs:
 
       - name: Get AWS lib
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GHP_TOKEN }}
         run: |
           # get aws presales lib
           gh release download v${{ inputs.bonita_aws_version }} \
