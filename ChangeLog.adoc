@@ -1,5 +1,18 @@
 = Changelog
 
+== Version 1.13.0 (2026-02-26)
+
+=== Features
+
+* *OpenAI API Key Support in Data Generation*
+** Added optional `OPENAI_API_KEY` secret to `reusable_run_datagen.yml`
+** Passed as `-DOPENAI_API_KEY` Maven property to data generation projects
+
+=== Documentation
+
+* Updated CLAUDE.md with `OPENAI_API_KEY` secret documentation
+* Added OpenAI and Salesforce secrets to secret descriptions section
+
 == Version 1.12.0 (2026-02-17)
 
 === Features
