@@ -187,9 +187,13 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Create AWS server
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # get aws presales lib
-          ./mvnw --batch-mode --no-transfer-progress dependency:copy -Dartifact=com.bonitasoft.presales.aws:bonita-aws:${{ inputs.bonita_aws_version }}:jar:jar-with-dependencies -DoutputDirectory=.
+          gh release download v${{ inputs.bonita_aws_version }} \
+            --repo laurentleseigneur/bonita-aws \
+            --pattern "*-jar-with-dependencies.jar"
           # create server
           java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
           -c create \

@@ -1,0 +1,8 @@
+name: test_list_server
+on:
+  workflow_dispatch:
+
+jobs:
+  list_server:
+    uses: ./.github/workflows/reusable_list_server.yml
+    secrets: inherit
