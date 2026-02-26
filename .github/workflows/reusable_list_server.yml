@@ -94,6 +94,13 @@ jobs:
               "|------|--------|-----|-------------|",
           ]
 
+          def sort_key(i):
+              status = (i.get("state") or {}).get("name", "")
+              lt = i.get("launchTime") or 0
+              return (0 if status == "running" else 1, -lt if isinstance(lt, (int, float)) else 0)
+
+          instances.sort(key=sort_key)
+
           for i in instances:
               name        = get_tag(i.get("tags"), "Name") or get_tag(i.get("tags"), "bcd:stackId") or "-"
               status      = (i.get("state") or {}).get("name", "-")
