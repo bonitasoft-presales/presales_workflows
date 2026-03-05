@@ -1,5 +1,24 @@
 = Changelog
 
+== Version 1.17.0 (2026-03-05)
+
+=== Features
+
+* *`reusable_run_it.yml`*: Add `playwright_screenshots_path` input parameter
+** Configurable path for Playwright screenshots upload (default: `IT/target/playwright-screenshots/**`)
+** Fixes typo in previous hardcoded path (`playright` → `playwright`)
+
+* *`reusable_run_it.yml`*: Add `$GITHUB_STEP_SUMMARY` output to key steps
+** `set env variables`: markdown table with `AWS_PUBLIC_DNS_HOSTNAME`, `IT_FOLDER_EXISTS`, `DATAGEN_FOLDER_EXISTS`, `BONITA_URL`, `playwright_screenshots_path`
+** `upload Playwright screenshots`: summary with artifact name and path
+** `upload Bonita test reports`: summary with artifact name and path
+** Artifact names include `${{ github.run_id }}` suffix; `retention-days: 30` set on both uploads
+
+* *`test_run_it.yml`*: Rewrite to use mocked artifacts and proper inputs
+** `workflow_dispatch` inputs: `bonita_url` and `playwright_screenshots_path` with realistic defaults
+** New `mock_artifacts` job creates and uploads `aws_instance.yaml` and `pre_requisites.yaml` locally
+** Eliminates full chain (`prerequisites → create_server → build_sca → deploy_sca`) from test workflow
+
 == Version 1.16.0 (2026-03-05)
 
 === Features
