@@ -22,6 +22,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      checks: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,3 +163,28 @@ jobs:
           -Dbonita.url=${BONITA_URL} \
           -DSMTP_SERVER=greenmail \
           -DSMTP_PORT=3025
+
+      - name: publish test report
+        uses: dorny/test-reporter@v1
+        if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
+        with:
+          name: JUnit Tests
+          path: IT/target/failsafe-reports/**/*.xml,IT/target/surefire-reports/**/*.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: upload Playwright screenshots
+        uses: actions/upload-artifact@v4
+        if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
+        with:
+          name: playwright-screenshots
+          path: IT/target/**/screenshots/**
+          if-no-files-found: ignore
+
+      - name: upload Bonita test reports
+        uses: actions/upload-artifact@v4
+        if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
+        with:
+          name: bonita-test-reports
+          path: IT/target/bonita-test-reports/**
+          if-no-files-found: ignore
