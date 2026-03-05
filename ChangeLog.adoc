@@ -1,5 +1,14 @@
 = Changelog
 
+== Version 1.15.0 (2026-03-05)
+
+=== Features
+
+* *`reusable_run_it.yml`*: Add optional `bonita_url` input parameter
+** Replaces hardcoded URL with configurable input
+** Defaults to `http://<AWS_PUBLIC_DNS_HOSTNAME>:80/bonita` (port changed from 8081 to 80)
+** Allows callers to override the Bonita URL
+
 == Version 1.14.0 (2026-02-26)
 
 === Features

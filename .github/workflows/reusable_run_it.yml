@@ -1,6 +1,12 @@
 name: runIT
 on:
   workflow_call:
+    inputs:
+      bonita_url:
+        description: 'Bonita URL (e.g. http://hostname:80/bonita). Defaults to http://<AWS_PUBLIC_DNS_HOSTNAME>:80/bonita'
+        required: false
+        default: ''
+        type: string
     secrets:
       JFROG_USER:
         required: true
@@ -131,9 +137,14 @@ jobs:
       - name: set env variables
         id: set-env-variable
         run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
-          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['IT_FOLDER_EXISTS'] }}" >> $GITHUB_ENV 
-          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['DATAGEN_FOLDER_EXISTS'] }}" >> $GITHUB_ENV 
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV
+          echo "IT_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['IT_FOLDER_EXISTS'] }}" >> $GITHUB_ENV
+          echo "DATAGEN_FOLDER_EXISTS=${{ steps.read-yaml-requisite-file.outputs['DATAGEN_FOLDER_EXISTS'] }}" >> $GITHUB_ENV
+          BONITA_URL="${{ inputs.bonita_url }}"
+          if [ -z "$BONITA_URL" ]; then
+            BONITA_URL="http://${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}:80/bonita"
+          fi
+          echo "BONITA_URL=$BONITA_URL" >> $GITHUB_ENV
 
       - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
         id: display-env-variable
@@ -148,6 +159,6 @@ jobs:
           echo "Integration test using Bonita test toolkit"
           ./mvnw --batch-mode --no-transfer-progress clean verify \
           -f IT/pom.xml \
-          -Dbonita.url=http://${AWS_PUBLIC_DNS_HOSTNAME}:8081/bonita \
+          -Dbonita.url=${BONITA_URL} \
           -DSMTP_SERVER=greenmail \
           -DSMTP_PORT=3025
