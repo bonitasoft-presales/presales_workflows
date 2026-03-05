@@ -1,5 +1,20 @@
 = Changelog
 
+== Version 1.16.0 (2026-03-05)
+
+=== Features
+
+* *`reusable_run_it.yml`*: Publish test artifacts after integration tests
+** Publishes JUnit XML reports from `IT/target/surefire-reports/`
+** Publishes Playwright screenshots from `IT/target/screenshots/`
+** Publishes Bonita test toolkit HTML reports from `IT/target/bonita-test-toolkit/reports/`
+** All artifacts use the run ID as suffix for uniqueness
+** Artifacts have a 30-day retention period
+
+* *Claude skills*: Added `.claude/commands/release.md` and `.claude/commands/github-actions.md`
+** Automates release workflow with ChangeLog, version bumps, commit, tag, push, and GitHub release
+** Documents GitHub Actions conventions and patterns for this repository
+
 == Version 1.15.0 (2026-03-05)
 
 === Features
