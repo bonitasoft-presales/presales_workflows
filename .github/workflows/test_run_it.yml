@@ -1,26 +1,51 @@
 name: test_run_it
 on:
   workflow_dispatch:
+    inputs:
+      bonita_url:
+        description: 'Bonita URL override (leave empty to use default from aws_instance artifact)'
+        required: false
+        default: 'http://mock-ec2.eu-west-1.compute.amazonaws.com:80/bonita'
+        type: string
+      playwright_screenshots_path:
+        description: 'Path to Playwright screenshots folder'
+        required: false
+        default: 'IT/target/playwright-screenshots/**'
+        type: string
 
 jobs:
-  prerequisites:
-    uses: ./.github/workflows/reusable_prerequisites.yml
+  mock_artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create mock aws_instance artifact
+        run: |
+          cat <<EOF > aws_instance.yaml
+          publicDnsName: mock-ec2.eu-west-1.compute.amazonaws.com
+          EOF
 
-  create_server:
-    uses: ./.github/workflows/reusable_create_server.yml
-    secrets: inherit
+      - name: Upload mock aws_instance artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aws_instance
+          path: aws_instance.yaml
 
-  build_sca:
-    needs: [prerequisites, create_server]
-    uses: ./.github/workflows/reusable_build_sca.yml
-    secrets: inherit
+      - name: Create mock pre_requisites artifact
+        run: |
+          cat <<EOF > pre_requisites.yaml
+          IT_FOLDER_EXISTS: true
+          DATAGEN_FOLDER_EXISTS: false
+          EOF
 
-  deploy_sca:
-    needs: build_sca
-    uses: ./.github/workflows/reusable_deploy_sca.yml
-    secrets: inherit
+      - name: Upload mock pre_requisites artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre_requisites
+          path: pre_requisites.yaml
 
   run_it:
-    needs: deploy_sca
+    needs: mock_artifacts
     uses: ./.github/workflows/reusable_run_it.yml
+    with:
+      bonita_url: ${{ inputs.bonita_url }}
+      playwright_screenshots_path: ${{ inputs.playwright_screenshots_path }}
     secrets: inherit

@@ -7,6 +7,11 @@ on:
         required: false
         default: ''
         type: string
+      playwright_screenshots_path:
+        description: 'Path to Playwright screenshots folder'
+        required: false
+        default: 'IT/target/playwright-screenshots/**'
+        type: string
     secrets:
       JFROG_USER:
         required: true
@@ -146,13 +151,14 @@ jobs:
             BONITA_URL="http://${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }}:80/bonita"
           fi
           echo "BONITA_URL=$BONITA_URL" >> $GITHUB_ENV
-
-      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
-        id: display-env-variable
-        run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
-          echo "IT_FOLDER_EXISTS: [${IT_FOLDER_EXISTS}]" 
-          echo "DATAGEN_FOLDER_EXISTS: [${DATAGEN_FOLDER_EXISTS}]" 
+          echo "## runIT — Environment" >> $GITHUB_STEP_SUMMARY
+          echo "| Variable | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| AWS_PUBLIC_DNS_HOSTNAME | ${{ steps.read-yaml-instance-file.outputs['publicDnsName'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| IT_FOLDER_EXISTS | ${{ steps.read-yaml-requisite-file.outputs['IT_FOLDER_EXISTS'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DATAGEN_FOLDER_EXISTS | ${{ steps.read-yaml-requisite-file.outputs['DATAGEN_FOLDER_EXISTS'] }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| BONITA_URL | $BONITA_URL |" >> $GITHUB_STEP_SUMMARY
+          echo "| playwright_screenshots_path | ${{ inputs.playwright_screenshots_path }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: run integration test
         if: env.IT_FOLDER_EXISTS == 'true'
@@ -174,17 +180,39 @@ jobs:
           fail-on-error: false
 
       - name: upload Playwright screenshots
+        id: upload-playwright-screenshots
         uses: actions/upload-artifact@v4
         if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
         with:
-          name: playwright-screenshots
-          path: IT/target/**/screenshots/**
+          name: playwright-screenshots-${{ github.run_id }}
+          path: ${{ inputs.playwright_screenshots_path }}
           if-no-files-found: ignore
+          retention-days: 30
+
+      - name: upload Playwright screenshots summary
+        if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
+        run: |
+          echo "## runIT — Playwright Screenshots" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | playwright-screenshots-${{ github.run_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Path | ${{ inputs.playwright_screenshots_path }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: upload Bonita test reports
+        id: upload-bonita-test-reports
         uses: actions/upload-artifact@v4
         if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
         with:
-          name: bonita-test-reports
+          name: bonita-test-reports-${{ github.run_id }}
           path: IT/target/bonita-test-reports/**
           if-no-files-found: ignore
+          retention-days: 30
+
+      - name: upload Bonita test reports summary
+        if: env.IT_FOLDER_EXISTS == 'true' && (success() || failure())
+        run: |
+          echo "## runIT — Bonita Test Reports" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact | bonita-test-reports-${{ github.run_id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Path | IT/target/bonita-test-reports/** |" >> $GITHUB_STEP_SUMMARY
