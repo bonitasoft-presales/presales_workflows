@@ -21,6 +21,8 @@ on:
         required: true
       GHP_TOKEN:
         required: true
+      OPENAI_API_KEY:
+        required: false
 jobs:
   run_IT:
     runs-on: ubuntu-latest
@@ -168,7 +170,8 @@ jobs:
           -f IT/pom.xml \
           -Dbonita.url=${BONITA_URL} \
           -DSMTP_SERVER=greenmail \
-          -DSMTP_PORT=3025
+          -DSMTP_PORT=3025 \
+          -DOPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
 
       - name: publish test report
         uses: dorny/test-reporter@v1
