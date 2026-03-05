@@ -1,5 +1,14 @@
 = Changelog
 
+== Version 1.18.0 (2026-03-05)
+
+=== Features
+
+* *`reusable_run_it.yml`*: Add optional `OPENAI_API_KEY` secret
+** Declared as optional secret (`required: false`)
+** Passed as `-DOPENAI_API_KEY` Maven property to integration test projects
+** Matches the pattern already used in `reusable_run_datagen.yml`
+
 == Version 1.17.0 (2026-03-05)
 
 === Features
