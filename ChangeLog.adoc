@@ -1,5 +1,13 @@
 = Changelog
 
+== Version 1.19.0 (2026-03-06)
+
+=== Fixes
+
+* *`reusable_run_it.yml`*: Fix JUnit report parsing crash
+** Changed glob from `**/*.xml` to `**/TEST-*.xml` for both `failsafe-reports` and `surefire-reports`
+** `failsafe-summary.xml` (Maven metadata) was matched by the previous pattern and crashed `dorny/test-reporter` with `TypeError: Cannot read properties of undefined (reading '$')`
+
 == Version 1.18.0 (2026-03-05)
 
 === Features
