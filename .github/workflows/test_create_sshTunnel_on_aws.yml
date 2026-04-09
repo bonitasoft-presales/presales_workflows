@@ -5,6 +5,7 @@ on:
       bonita_dns_name:
         description: 'Bonita server DNS name'
         required: true
+        default: 'ec2-52-48-48-197.eu-west-1.compute.amazonaws.com'
         type: string
 
 jobs:
