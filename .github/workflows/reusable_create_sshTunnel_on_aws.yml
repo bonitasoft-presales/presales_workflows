@@ -59,6 +59,16 @@ jobs:
           aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
           port_range: '22'
 
+      - name: Check SSH secrets are set
+        env:
+          SSH_PUBLIC_KEY_B64: ${{ secrets.SSH_PUBLIC_KEY_B64 }}
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
+        run: |
+          echo "SSH_PUBLIC_KEY_B64 length: ${#SSH_PUBLIC_KEY_B64}"
+          echo "SSH_PRIVATE_KEY_B64 length: ${#SSH_PRIVATE_KEY_B64}"
+          [ -n "$SSH_PUBLIC_KEY_B64" ] || { echo "ERROR: SSH_PUBLIC_KEY_B64 is empty"; exit 1; }
+          [ -n "$SSH_PRIVATE_KEY_B64" ] || { echo "ERROR: SSH_PRIVATE_KEY_B64 is empty"; exit 1; }
+
       - name: Decode SSH keys
         env:
           SSH_PUBLIC_KEY_B64: ${{ secrets.SSH_PUBLIC_KEY_B64 }}
@@ -68,6 +78,8 @@ jobs:
           echo "$SSH_PRIVATE_KEY_B64" | base64 --decode > tunnel_key
           chmod 600 tunnel_key
           chmod 644 tunnel_key.pub
+          echo "tunnel_key size: $(wc -c < tunnel_key) bytes"
+          echo "tunnel_key.pub size: $(wc -c < tunnel_key.pub) bytes"
 
       - name: Transfer SSH keys to remote instance
         run: |
