@@ -1,5 +1,29 @@
 = Changelog
 
+== Version 1.20.0 (2026-04-09)
+
+=== Features
+
+* *`reusable_create_sshTunnel_on_aws.yml`*: New reusable workflow to set up an SSH tunnel on an existing AWS EC2 instance
+** Decodes base64-encoded SSH keypair secrets (`SSH_PUBLIC_KEY_B64`, `SSH_PRIVATE_KEY_B64`) and transfers them to `~/.ssh/` on the remote instance
+** Transfers a configurable tunnel script (`tunnel_script_path` input) and executes it
+** Transfers `whoUsesPort.sh` utility (`who_uses_port_script_path` input, default: `sshTunnel/whoUsesPort.sh`)
+** Runs port usage check after tunnel start with `if: always()` for diagnostics even on failure
+** Includes secret presence validation (length check) before decoding
+
+* *`sshTunnel/startTunnel.sh`*: New tunnel startup script
+** Stops any existing process listening on port 9090 before starting a new tunnel
+** SSH options: `StrictHostKeyChecking=no`, `BatchMode=yes`, `ConnectTimeout=10`, `ServerAliveInterval=15`, `ServerAliveCountMax=3`
+** Poll loop (up to 30s) to verify the tunnel is listening after start
+
+* *`sshTunnel/whoUsesPort.sh`*: New utility script to inspect which process listens on a given port (default: 9090)
+
+* *`test_create_sshTunnel_on_aws.yml`*: Manual test workflow for the new SSH tunnel workflow
+
+=== Fixes
+
+* *`aws-actions/configure-aws-credentials`*: Bumped from `@v4` to `@v6` in all reusable workflows (`reusable_create_server.yml`, `reusable_build_sca.yml`, `reusable_deploy_sca.yml`, `reusable_deploy_uib_aws.yml`, `reusable_get_bonita_logs.yml`)
+
 == Version 1.19.0 (2026-03-06)
 
 === Fixes
