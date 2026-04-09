@@ -11,11 +11,13 @@ RETRY_DELAY=2
 echo "Starting SSH tunnel on port ${LOCAL_PORT}..."
 ssh -i ~/.ssh/tunnel_key \
   -p 2222 \
+  -o StrictHostKeyChecking=no \
   -o PubkeyAcceptedAlgorithms=+ssh-rsa \
   -o ExitOnForwardFailure=yes \
   -o ConnectTimeout=10 \
   -o ServerAliveInterval=15 \
   -o ServerAliveCountMax=3 \
+  -o BatchMode=yes \
   -L ${LOCAL_PORT}:127.0.0.1:${LOCAL_PORT} \
   "${SSH_USER}@${SSH_HOST}" \
   -fN
