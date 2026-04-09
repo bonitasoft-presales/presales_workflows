@@ -10,6 +10,11 @@ on:
         required: true
         type: string
         description: "path to the shell script that starts the SSH tunnel (relative to workspace)"
+      who_uses_port_script_path:
+        required: false
+        type: string
+        default: "sshTunnel/whoUsesPort.sh"
+        description: "path to the whoUsesPort.sh script (relative to workspace)"
     secrets:
       AWS_PRIVATE_KEY:
         required: true
@@ -74,11 +79,17 @@ jobs:
             chmod 644 ~/.ssh/tunnel_key.pub
           '
 
-      - name: Transfer tunnel script
+      - name: Transfer tunnel script and tools
         run: |
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.tunnel_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/start_tunnel.sh
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh'
+          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.who_uses_port_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/whoUsesPort.sh
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh ~/whoUsesPort.sh'
 
       - name: Start SSH tunnel
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/start_tunnel.sh'
+
+      - name: Check port usage on remote instance
+        if: always()
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/whoUsesPort.sh 9090'
