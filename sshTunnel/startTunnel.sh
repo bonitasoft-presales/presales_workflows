@@ -6,7 +6,7 @@ SSH_USER="${SSH_USER:-cleverage_denodo_bonitasoft}"
 SSH_HOST="${SSH_HOST:-bastion-ssh.fr-01.cloud.alfa-safety.net}"
 
 echo "Starting SSH tunnel on port ${LOCAL_PORT}..."
-ssh -i ~/.ssh/cleverage_rsa \
+ssh -i ~/.ssh/tunnel_key \
   -p 2222 \
   -o PubkeyAcceptedAlgorithms=+ssh-rsa \
   -o ExitOnForwardFailure=yes \

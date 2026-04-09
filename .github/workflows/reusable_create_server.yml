@@ -233,7 +233,7 @@ jobs:
         run: |
           echo "set AWS_PUBLIC_DNS_HOSTNAME to [${AWS_PUBLIC_DNS_HOSTNAME}]" 
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}

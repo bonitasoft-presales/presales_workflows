@@ -153,7 +153,7 @@ jobs:
           docker save --output bonita_sca.tar bonita_sca:1.0
           ls -ltr bonita_sca.tar
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
