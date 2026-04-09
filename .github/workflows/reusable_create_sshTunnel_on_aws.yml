@@ -1,0 +1,84 @@
+name: createSshTunnelOnAws
+on:
+  workflow_call:
+    inputs:
+      bonita_dns_name:
+        required: true
+        type: string
+        description: "target server, e.g. ec2-3-255-139-245.eu-west-1.compute.amazonaws.com"
+      tunnel_script_path:
+        required: true
+        type: string
+        description: "path to the shell script that starts the SSH tunnel (relative to workspace)"
+    secrets:
+      AWS_PRIVATE_KEY:
+        required: true
+      AWS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY:
+        required: true
+      AWS_SECURITY_GROUP_ID:
+        required: true
+      AWS_SSH_USER:
+        required: true
+      SSH_PUBLIC_KEY_B64:
+        required: true
+      SSH_PRIVATE_KEY_B64:
+        required: true
+
+jobs:
+  create_ssh_tunnel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set AWS_PUBLIC_DNS_HOSTNAME env variable
+        run: |
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ inputs.bonita_dns_name }}" >> $GITHUB_ENV
+
+      - name: Setup AWS SSH private key
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
+        with:
+          aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+          port_range: '22'
+
+      - name: Decode SSH keys
+        env:
+          SSH_PUBLIC_KEY_B64: ${{ secrets.SSH_PUBLIC_KEY_B64 }}
+          SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
+        run: |
+          echo "$SSH_PUBLIC_KEY_B64" | base64 --decode > tunnel_key.pub
+          echo "$SSH_PRIVATE_KEY_B64" | base64 --decode > tunnel_key
+          chmod 600 tunnel_key
+          chmod 644 tunnel_key.pub
+
+      - name: Transfer SSH keys to remote instance
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'mkdir -p ~/.ssh && chmod 700 ~/.ssh'
+          scp -o StrictHostKeyChecking=no -i private_key tunnel_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/.ssh/tunnel_key
+          scp -o StrictHostKeyChecking=no -i private_key tunnel_key.pub ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/.ssh/tunnel_key.pub
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '
+            chmod 600 ~/.ssh/tunnel_key
+            chmod 644 ~/.ssh/tunnel_key.pub
+          '
+
+      - name: Transfer tunnel script
+        run: |
+          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.tunnel_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/start_tunnel.sh
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh'
+
+      - name: Start SSH tunnel
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/start_tunnel.sh'
