@@ -1,0 +1,23 @@
+name: test_create_sshTunnel_on_aws
+on:
+  workflow_dispatch:
+    inputs:
+      bonita_dns_name:
+        description: 'Bonita server DNS name'
+        required: true
+        type: string
+
+jobs:
+  create_ssh_tunnel:
+    uses: ./.github/workflows/reusable_create_sshTunnel_on_aws.yml
+    with:
+      bonita_dns_name: ${{ inputs.bonita_dns_name }}
+      tunnel_script_path: sshTunnel/startTunnel.sh
+    secrets:
+      AWS_PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+      AWS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+      AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECURITY_GROUP_ID: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+      AWS_SSH_USER: ${{ secrets.AWS_SSH_USER }}
+      SSH_PUBLIC_KEY_B64: ${{ secrets.SSH_PUBLIC_KEY_B64 }}
+      SSH_PRIVATE_KEY_B64: ${{ secrets.SSH_PRIVATE_KEY_B64 }}
