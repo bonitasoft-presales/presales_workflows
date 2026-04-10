@@ -1,5 +1,28 @@
 = Changelog
 
+== Version 1.21.0 (2026-04-10)
+
+=== Fixes
+
+* *`reusable_create_sshTunnel_on_aws.yml`*: Add `$GITHUB_STEP_SUMMARY` output to key steps
+** Configuration summary (target host, script paths)
+** SSH keys transfer result table
+** Tunnel started confirmation
+** Port 9090 status (always runs, even on failure)
+
+* *`README.adoc`*: Document `reusable_create_sshTunnel_on_aws.yml` with inputs, secrets and example
+
+=== Chores
+
+* Bump all external GitHub Actions to latest versions across all workflows:
+** `actions/checkout` `@v4` → `@v6`
+** `actions/download-artifact` `@v4` → `@v8`
+** `actions/setup-java` `@v4` → `@v5`
+** `actions/upload-artifact` `@v4` → `@v7`
+** `dorny/test-reporter` `@v1` → `@v3`
+
+* *`.claude/commands/github-actions.md`*: Add known latest versions table and `gh api` check command as enforced convention
+
 == Version 1.20.0 (2026-04-09)
 
 === Features
