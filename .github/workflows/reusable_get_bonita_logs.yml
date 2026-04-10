@@ -60,7 +60,7 @@ jobs:
           scp -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${{ inputs.bonita_dns_name }}:/home/${{ secrets.AWS_SSH_USER }}/${{ inputs.bonita_service }}.log ${{ github.workspace }}/${{ inputs.bonita_service }}.log
 
       - name: "Archive artifact ${{ inputs.bonita_service }} log file"
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "${{ inputs.bonita_service }}.log"
           path: "${{ github.workspace }}/${{ inputs.bonita_service }}.log"

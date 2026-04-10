@@ -24,7 +24,7 @@ jobs:
           EOF
 
       - name: Upload mock aws_instance artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aws_instance
           path: aws_instance.yaml
@@ -37,7 +37,7 @@ jobs:
           EOF
 
       - name: Upload mock pre_requisites artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pre_requisites
           path: pre_requisites.yaml

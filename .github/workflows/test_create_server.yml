@@ -14,7 +14,7 @@ jobs:
       publicDnsName: ${{ steps.read-yaml-file.outputs['publicDnsName'] }}
     steps:
       - name: Download artifact instance.yaml file
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: aws_instance
 
