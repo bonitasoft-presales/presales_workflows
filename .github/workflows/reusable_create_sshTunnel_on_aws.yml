@@ -41,6 +41,12 @@ jobs:
       - name: Set AWS_PUBLIC_DNS_HOSTNAME env variable
         run: |
           echo "AWS_PUBLIC_DNS_HOSTNAME=${{ inputs.bonita_dns_name }}" >> $GITHUB_ENV
+          echo "## createSshTunnelOnAws — Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Target host | ${{ inputs.bonita_dns_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tunnel script | ${{ inputs.tunnel_script_path }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| whoUsesPort script | ${{ inputs.who_uses_port_script_path }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Setup AWS SSH private key
         env:
@@ -90,6 +96,11 @@ jobs:
             chmod 600 ~/.ssh/tunnel_key
             chmod 644 ~/.ssh/tunnel_key.pub
           '
+          echo "## createSshTunnelOnAws — SSH Keys Transfer" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Destination | Permissions |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| tunnel_key | ~/.ssh/tunnel_key | 600 |" >> $GITHUB_STEP_SUMMARY
+          echo "| tunnel_key.pub | ~/.ssh/tunnel_key.pub | 644 |" >> $GITHUB_STEP_SUMMARY
 
       - name: Transfer tunnel script and tools
         run: |
@@ -100,8 +111,19 @@ jobs:
       - name: Start SSH tunnel
         run: |
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/start_tunnel.sh'
+          echo "## createSshTunnelOnAws — Tunnel Started" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Host | ${AWS_PUBLIC_DNS_HOSTNAME} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Script | ~/start_tunnel.sh |" >> $GITHUB_STEP_SUMMARY
+          echo "| Status | ✅ started |" >> $GITHUB_STEP_SUMMARY
 
       - name: Check port usage on remote instance
         if: always()
         run: |
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/whoUsesPort.sh 9090'
+          PORT_INFO=$(ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/whoUsesPort.sh 9090')
+          echo "$PORT_INFO"
+          echo "## createSshTunnelOnAws — Port 9090 Status" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$PORT_INFO" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY

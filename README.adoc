@@ -682,6 +682,73 @@ jobs:
     secrets: inherit
 ----
 
+=== reusable_create_sshTunnel_on_aws.yml
+
+Transfers a base64-encoded SSH keypair and a tunnel startup script to an existing AWS EC2 instance, then executes the script to establish the SSH tunnel.
+
+==== Inputs
+
+[cols="2,1,1,3", options="header"]
+|===
+|Name |Required |Default |Description
+
+|`bonita_dns_name`
+|Yes
+|
+|Target server DNS name
+
+|`tunnel_script_path`
+|Yes
+|
+|Path to the shell script that starts the SSH tunnel (relative to workspace)
+
+|`who_uses_port_script_path`
+|No
+|`sshTunnel/whoUsesPort.sh`
+|Path to the whoUsesPort.sh diagnostic script (relative to workspace)
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`AWS_PRIVATE_KEY`
+|AWS SSH private key
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID
+
+|`AWS_SSH_USER`
+|AWS SSH username
+
+|`SSH_PUBLIC_KEY_B64`
+|Base64-encoded SSH public key to transfer to the instance
+
+|`SSH_PRIVATE_KEY_B64`
+|Base64-encoded SSH private key to transfer to the instance
+|===
+
+==== Example
+
+[source,yaml]
+----
+jobs:
+  setup_tunnel:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_sshTunnel_on_aws.yml@v1.20.0
+    with:
+      bonita_dns_name: "ec2-xx-xxx-xxx-xxx.eu-west-1.compute.amazonaws.com"
+      tunnel_script_path: sshTunnel/startTunnel.sh
+    secrets: inherit
+----
+
 == Complete Pipeline Example
 
 [source,yaml]
