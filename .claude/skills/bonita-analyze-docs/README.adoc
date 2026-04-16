@@ -1,0 +1,363 @@
+= Bonita Document Analysis Skill
+:toc: left
+:toclevels: 3
+:icons: font
+
+Analyze requirements documents in `docs/in/` to extract comprehensive information for creating Bonita BPM processes and applications.
+
+== Usage
+
+[source,bash]
+----
+/bonita-analyze-docs
+----
+
+== Execution Flow
+
+The skill follows these steps:
+
+. *Step 0: Cleanup Artifacts* - Asks if you want to remove previously generated artifacts from `docs/out/` (*.xml, *.proc, *.adoc files)
+. *Steps 1-3: Document Analysis* - Discover, read, and analyze documents in `docs/in/`
+. *Steps 4-5: AsciiDoc Generation* - Structure and generate comprehensive analysis document
+. *Step 6: BOM Generation* - Generate Bonita Business Object Model XML (Bonita 10.x compatible with Long foreign keys)
+. *Step 7: Organization Generation* - Generate organization structure with users, roles, groups
+. *Step 8: Connector Recommendations* - Search and recommend available Bonita connectors
+. *Step 9: UI Builder Analysis* - Analyze and recommend UI Builder application structure
+. *Step 10: Process Diagram Generation* - Generate Bonita process diagram (.proc file)
+. *Step 11: Profile Generation* - Generate Bonita profile XML for access control
+. *Step 12: Summary* - Provide comprehensive summary of all generated artifacts
+
+TIP: When re-running the skill, choose "Yes" in Step 0 to ensure a clean slate and avoid confusion with old artifacts.
+
+== Overview
+
+This skill performs intelligent analysis of project requirements documents (PDFs, flowcharts, specifications, etc.) and extracts all information needed to build Bonita processes, data models, forms, and applications.
+
+== What It Does
+
+The skill systematically analyzes documents to extract:
+
+=== 1. Process Information
+
+* Process names, descriptions, and flows
+* Task sequences (user tasks, service tasks, script tasks)
+* Decision points and conditional logic
+* Events (start, end, intermediate, timers)
+* Sub-processes and parallel flows
+* Loop conditions
+
+=== 2. Organization Structure
+
+* Actors and roles
+* Groups and user profiles
+* Task assignments and responsibilities
+* Permission requirements
+
+=== 3. Business Data Model (BDM)
+
+* Entity definitions and attributes
+* Data types and constraints
+* Relationships (one-to-many, many-to-many)
+* Required queries and indexes
+
+=== 4. Forms and UI Requirements
+
+* Form fields and validation rules
+* Widget requirements (date pickers, file uploads, tables)
+* Layout and design specifications
+* User interface flows
+
+=== 5. Business Rules
+
+* Decision logic and conditions
+* Calculation formulas
+* Validation constraints
+* Business process rules
+
+=== 6. Integration Requirements
+
+* External systems and APIs
+* REST/SOAP services
+* Database connections
+* Email notifications
+* File operations
+
+=== 7. Application Structure (UI Builder)
+
+* *Technology:* Bonita UI Builder (not UI Designer)
+* Detailed page-by-page specifications
+* Widgets and data sources for each page
+* Menu structure for each profile
+* User journeys and navigation flow
+* Custom layouts or themes (BonitaPresalesHorizontalLayoutV9)
+* Reports and dashboards with KPI
+
+=== 8. Connector Discovery and Recommendations
+
+* Automatically searches for available Bonita connectors when integrations are needed
+* Queries presales connectors: https://github.com/orgs/bonitasoft-presales/repositories?q=connector
+* Queries community connectors: https://github.com/orgs/Bonitasoft-Community/repositories?q=connector
+* Provides installation guides and usage suggestions
+* Identifies gaps requiring custom connector development
+
+== Output
+
+The skill generates *5 ready-to-use files* in the `docs/out/` directory:
+
+=== 1. AsciiDoc Analysis Report (.adoc)
+
+A comprehensive analysis structured in four main sections:
+
+==== Business Case
+
+* Executive summary and problem statement
+* Business objectives and goals
+* Expected benefits and success criteria
+* Stakeholder identification
+
+==== Data Model (BDM)
+
+* Complete list of business entities
+* Entity attributes with data types
+* Relationships between entities
+* Constraints and validation rules
+* BDM package structure suggestions
+
+==== Process(es)
+
+* Detailed process flows and descriptions
+* Task breakdown (User tasks, Service tasks, Script tasks)
+* Decision points and gateways
+* Events (start, end, timers)
+* Process variables and data
+* Required connectors and integrations
+
+==== Actors
+
+* Complete actor/role definitions
+* Responsibilities and task assignments
+* Organization structure (groups, hierarchy)
+* Required permissions
+
+==== Recommended Connectors
+
+If integration requirements are identified:
+
+* Available presales connectors from bonitasoft-presales GitHub
+* Available community connectors from Bonitasoft-Community GitHub
+* Installation and usage guides
+* Suggestions for custom development if needed
+
+==== Application UI Builder - Pages et Menus
+
+Complete application structure using Bonita UI Builder:
+
+* *Technology choice:* UI Builder (React-based, modern, responsive)
+* *Pages:* Detailed specifications for 6-8 pages (Dashboard, New Request, My Requests, Validations, Detail, Search, Reports, Admin)
+* *Menus:* Menu structure for each profile type
+* *Widgets:* List of UI Builder components needed (forms, tables, charts, cards)
+* *Data integration:* BDM queries, Process APIs, custom REST APIs
+* *Navigation flows:* User journeys for typical scenarios
+* *Layouts:* Using BonitaPresalesHorizontalLayoutV9
+
+*File Location:* `docs/out/analysis-YYYY-MM-DD.adoc` or `docs/out/requirements-analysis.adoc`
+
+*Format:* AsciiDoc with proper syntax (tables, lists, sections) ready for conversion to PDF or HTML
+
+=== 2. Bonita BOM XML File (bom.xml)
+
+A ready-to-use Bonita Business Object Model XML file containing all identified entities.
+
+*Content:*
+
+* All BDM entities with proper qualifiedName (package.ClassName)
+* Field definitions with correct Bonita types (STRING, INTEGER, DATE, BOOLEAN, TEXT, etc.)
+* Relationship mappings (AGGREGATION for one-to-many and many-to-one)
+* Unique constraints on key fields
+* Pre-defined queries for common operations (findByNumero, findByStatut, etc.)
+* Proper nullable and collection flags
+
+*File Location:* `docs/out/bom.xml`
+
+*Format:* Valid Bonita BOM XML conformant to `http://documentation.bonitasoft.com/bdm-xml-schema/1.0`
+
+*Usage:* This file can be directly imported into Bonita Studio to create the Business Data Model:
+
+. Open Bonita Studio
+. Go to Development → Business Data Model → Define
+. Click Import → Select `docs/out/bom.xml`
+. Review and deploy the BDM
+
+=== 3. Bonita Organization XML File (organization.xml)
+
+A ready-to-use Bonita Organization definition with test users, roles, groups, and memberships.
+
+*Content:*
+
+* Test users representing each actor type (RH, Controle Gestion, Budget, Directions)
+* User credentials (default password: "bpm" for testing)
+* Professional data (email, phone, job title)
+* Roles mapped to process actors (DEMANDEUR, VALIDEUR_RH, VALIDEUR_CG, VALIDEUR_BUDGET)
+* Group hierarchy matching organizational structure
+* Memberships linking users to roles and groups
+
+*File Location:* `docs/out/organization.xml`
+
+*Format:* Valid Bonita Organization XML conformant to `http://documentation.bonitasoft.com/organization-xml-schema/1.1`
+
+*Usage:* This file can be directly imported into Bonita Studio/Portal to set up the organization:
+
+. Open Bonita Studio
+. Go to Organization → Manage
+. Click Import → Select `docs/out/organization.xml`
+. Publish the organization
+
+=== 4. Bonita Process Diagram File (.proc)
+
+A ready-to-import Bonita process diagram with the complete workflow structure.
+
+*Content:*
+
+* Process pool with lanes for each actor
+* Start and end events
+* User tasks for validations
+* Service tasks for notifications
+* XOR gateways for decision points
+* Sequence flows connecting all elements
+* Actor mappings to organization roles
+* Visual notation with diagram layout
+
+*File Location:* `docs/out/ProcessName-1.0.proc` (e.g., `Validation_Demande_Recrutement-1.0.proc`)
+
+*Format:* Valid Bonita process XMI format (Eclipse Modeling Framework)
+
+*Usage:* This file can be directly imported into Bonita Studio:
+
+. Open Bonita Studio
+. Go to File → Import → BOS Archive
+. Select the .proc file
+. The process appears in the project with complete structure
+. Refine by adding forms, connectors, business data, and contracts
+
+*Note:* The generated diagram is a skeleton with the main workflow structure. You'll need to add:
+- Forms for user tasks
+- Connectors for service tasks (email, etc.)
+- Business data operations
+- Contracts and data validation
+
+=== 5. Bonita Profile XML File (profile.xml)
+
+A Bonita profile definition file mapping profiles to the organization roles.
+
+*Content:*
+
+* Custom profiles for each actor type
+* Profile mappings to roles, groups, users, or memberships
+* Default Bonita profiles (User, Administrator, Process manager) if needed
+
+*File Location:* `docs/out/profile.xml`
+
+*Format:* Valid Bonita Profile XML conformant to `http://documentation.bonitasoft.com/profile-xml-schema/1.0`
+
+*Usage:* This file defines which users/roles can access which applications:
+
+. Include in Living Application deployment
+. Deploy with bonita-la-deployer
+. Or import manually in Bonita Portal → Organization → Profiles
+
+== Requirements
+
+* Documents must be in `docs/in/` directory
+* Supported formats: PDF, Word, Excel, images, text files
+* Clear, readable document quality for best results
+
+== Example Documents
+
+This skill works well with:
+
+* *Flowcharts* (Logigramme actuel.pdf) - Extracts process flows
+* *Specifications* (Note - cahier des charges.pdf) - Extracts requirements
+* Technical design documents
+* User stories and requirements
+* Wireframes and mockups
+* Business process documentation
+
+== Use Cases
+
+=== New Project Setup
+
+* Analyze client requirements documents
+* Generate comprehensive implementation plan
+* Identify all artifacts to create
+
+=== Requirements Review
+
+* Validate requirements completeness
+* Identify gaps and ambiguities
+* Cross-reference multiple documents
+
+=== Estimation and Planning
+
+* Assess project complexity
+* Identify technical challenges
+* Plan implementation phases
+
+=== Documentation
+
+* Create structured requirements documentation
+* Generate traceability matrix
+* Produce technical specifications
+
+== Why Bonita-Specific?
+
+This skill is tailored for Bonita projects with:
+
+=== 1. BPM-Focused Analysis
+
+* Recognizes process patterns (BPMN concepts)
+* Identifies task types (user, service, script)
+* Understands Bonita-specific terminology
+
+=== 2. BDM Extraction
+
+* Identifies business objects and relationships
+* Suggests BDM structure compatible with Bonita
+* Recognizes query requirements
+
+=== 3. Bonita Artifact Mapping
+
+* Maps requirements to Bonita artifacts (.proc, BDM, forms)
+* Identifies reusable components from template
+* Suggests appropriate connectors and widgets
+
+=== 4. Project Template Integration
+
+* Leverages existing custom widgets
+* Uses available layouts and themes
+* Identifies applicable Groovy utilities
+
+== Related Skills
+
+* `/bonita-github-actions` - Analyze GitHub Actions workflows
+* `/bonita-commits` - Manage Git commits for Bonita projects
+
+== Next Steps After Analysis
+
+Once the skill completes analysis:
+
+. Review the extracted requirements
+. Clarify any ambiguities identified
+. Begin importing Bonita artifacts:
+  * *Import process diagram* → Bonita Studio → File → Import → BOS Archive → Select .proc file
+  * *Import BOM XML* → Bonita Studio → Development → Business Data Model → Import
+  * *Import organization XML* → Bonita Studio → Organization → Manage → Import → Publish
+  * Review and install recommended connectors
+  * Refine process diagram:
+    ** Add forms to user tasks
+    ** Configure connectors on service tasks (email notifications)
+    ** Add business data operations
+    ** Define contracts and validation
+  * Design custom pages if needed
+  * Deploy with bonita-la-deployer
+
+The skill output serves as a *complete starting point* for building your Bonita application, including a working process skeleton ready to be refined.

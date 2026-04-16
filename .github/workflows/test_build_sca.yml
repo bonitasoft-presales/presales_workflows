@@ -1,13 +1,33 @@
 name: test_build_sca
 on:
   workflow_dispatch:
+    inputs:
+      bonita_environment:
+        description: 'Bonita environment name passed to -Dbonita.environment'
+        required: true
+        default: 'presales'
 
 jobs:
-  create_server:
-    uses: ./.github/workflows/reusable_create_server.yml
-    secrets: inherit
+  mock_aws_instance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create mock aws_instance artifact
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '.'
+          file: aws_instance.yaml
+          content: |
+            publicDnsName: mock-ec2-hostname.eu-west-1.compute.amazonaws.com
+
+      - name: Upload mock aws_instance artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: aws_instance
+          path: aws_instance.yaml
 
   build_sca:
-    needs: create_server
+    needs: mock_aws_instance
     uses: ./.github/workflows/reusable_build_sca.yml
+    with:
+      bonita_environment: ${{ inputs.bonita_environment }}
     secrets: inherit

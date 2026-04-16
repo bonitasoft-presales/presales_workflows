@@ -1,6 +1,12 @@
 name: buildSca
 on:
   workflow_call:
+    inputs:
+      bonita_environment:
+        description: 'Bonita environment name passed to -Dbonita.environment'
+        required: false
+        type: string
+        default: 'presales'
     secrets:
       JFROG_USER:
         required: true
@@ -127,12 +133,11 @@ jobs:
       - name: set AWS_PUBLIC_DNS_HOSTNAME env variable
         id: set-env-variable
         run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV 
-
-      - name: display AWS_PUBLIC_DNS_HOSTNAME env variable
-        id: display-env-variable
-        run: |
-          echo "AWS_PUBLIC_DNS_HOSTNAME: [${AWS_PUBLIC_DNS_HOSTNAME}]" 
+          echo "AWS_PUBLIC_DNS_HOSTNAME=${{ steps.read-yaml-file.outputs['publicDnsName'] }}" >> $GITHUB_ENV
+          echo "## buildSca – AWS target" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | ----- |" >> $GITHUB_STEP_SUMMARY
+          echo "| AWS_PUBLIC_DNS_HOSTNAME | ${{ steps.read-yaml-file.outputs['publicDnsName'] }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Build Docker SCA image
         # docker.baseImageRepository isrequired when using bonitasoft tokens instead of customer tokens
@@ -140,9 +145,14 @@ jobs:
           ./mvnw --batch-mode --no-transfer-progress bonita-project:install
           ./mvnw --batch-mode --no-transfer-progress clean install \
           -Pdocker \
-          -Dbonita.environment=presales \
+          -Dbonita.environment=${{ inputs.bonita_environment }} \
           -Ddocker.baseImageRepository=bonitasoft.jfrog.io/docker-releases/bonita-subscription \
           -Ddocker.imageName=bonita_sca:1.0
+          echo "## buildSca – Docker image built" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | ----- |" >> $GITHUB_STEP_SUMMARY
+          echo "| bonita.environment | ${{ inputs.bonita_environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| image | bonita_sca:1.0 |" >> $GITHUB_STEP_SUMMARY
 
       - name: Logout from Jfrog
         run: docker logout https://bonitasoft.jfrog.io
@@ -178,3 +188,8 @@ jobs:
           '
           scp -o StrictHostKeyChecking=no -i private_key bonita_sca.tar ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/bonita_sca.tar
           scp -o StrictHostKeyChecking=no -i private_key -r infrastructure/sca ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~
+          echo "## buildSca – Transfer complete" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | ----- |" >> $GITHUB_STEP_SUMMARY
+          echo "| target | ${AWS_PUBLIC_DNS_HOSTNAME} |" >> $GITHUB_STEP_SUMMARY
+          echo "| artifact | bonita_sca.tar |" >> $GITHUB_STEP_SUMMARY

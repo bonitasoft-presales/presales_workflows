@@ -1,0 +1,309 @@
+# Step 2: Find Artifacts
+
+Locate the generated application artifact (.zip file) in the target directory.
+
+## Objective
+
+Find and validate the deployable .zip artifact that will be deployed to Bonita server.
+
+## Prerequisites
+
+- Maven build completed successfully (Step 1)
+- Artifacts exist in `app/target/` directory
+
+## Instructions
+
+### 1. Get Project Information
+
+Extract project information using Maven help:evaluate plugin:
+
+```bash
+# Get artifact ID
+PROJECT_NAME=$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f app/pom.xml)
+
+# Get version
+PROJECT_VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout -f app/pom.xml)
+
+# Environment is always 'presales' for local deployment
+ENVIRONMENT="presales"
+```
+
+**Command Breakdown:**
+- `help:evaluate` - Maven plugin to evaluate POM expressions
+- `-Dexpression=project.artifactId` - Extract the artifact ID
+- `-Dexpression=project.version` - Extract the project version
+- `-q` - Quiet mode (suppress Maven output)
+- `-DforceStdout` - Force output to stdout only
+- `-f app/pom.xml` - Specify POM file location
+
+**Expected Values:**
+- PROJECT_NAME: `poc-cnaf-rh2026`
+- PROJECT_VERSION: `1.0.0`
+- ENVIRONMENT: `presales`
+
+### 2. Validate Extracted Information
+
+Verify that project information was successfully extracted:
+
+```bash
+if [ -z "$PROJECT_NAME" ]; then
+  echo "ERROR: Could not extract project.artifactId from pom.xml"
+  exit 1
+fi
+
+if [ -z "$PROJECT_VERSION" ]; then
+  echo "ERROR: Could not extract project.version from pom.xml"
+  exit 1
+fi
+
+echo "Project Name: ${PROJECT_NAME}"
+echo "Project Version: ${PROJECT_VERSION}"
+echo "Environment: ${ENVIRONMENT}"
+```
+
+### 3. Build Expected Artifact Path
+
+Construct the expected artifact path using pattern:
+
+```
+app/target/<PROJECT_NAME>-<PROJECT_VERSION>-<ENVIRONMENT>.zip
+```
+
+Example:
+```bash
+ARTIFACT_PATH="app/target/${PROJECT_NAME}-${PROJECT_VERSION}-${ENVIRONMENT}.zip"
+# Results in: app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+
+echo "Expected artifact: ${ARTIFACT_PATH}"
+```
+
+### 4. Check Artifact Exists
+
+Verify the expected artifact exists:
+
+```bash
+if [ -f "${ARTIFACT_PATH}" ]; then
+  echo "✓ Artifact found: ${ARTIFACT_PATH}"
+else
+  echo "✗ Artifact not found: ${ARTIFACT_PATH}"
+
+  # Fallback: Search for any .zip files
+  echo "Searching for alternative .zip files in app/target/..."
+  FOUND_ZIPS=$(ls -t app/target/*.zip 2>/dev/null | head -1)
+
+  if [ -n "$FOUND_ZIPS" ]; then
+    echo "Found alternative artifact: ${FOUND_ZIPS}"
+    ARTIFACT_PATH="$FOUND_ZIPS"
+  else
+    echo "ERROR: No .zip artifacts found in app/target/"
+    exit 1
+  fi
+fi
+```
+
+**Expected Output (Success):**
+```
+✓ Artifact found: app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+```
+
+**Expected Output (Fallback):**
+```
+✗ Artifact not found: app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+Searching for alternative .zip files in app/target/...
+Found alternative artifact: app/target/poc-cnaf-rh2026-1.0.0-local.zip
+```
+
+### 5. Validate Artifact Properties
+
+Check that the artifact:
+- Exists and is readable
+- Has non-zero size (not empty)
+- Matches expected naming pattern
+- Has .zip extension
+
+```bash
+# Validate artifact
+if [ ! -f "${ARTIFACT_PATH}" ]; then
+  echo "ERROR: Artifact not found at ${ARTIFACT_PATH}"
+  exit 1
+fi
+
+if [ ! -r "${ARTIFACT_PATH}" ]; then
+  echo "ERROR: Artifact is not readable"
+  exit 1
+fi
+
+FILE_SIZE=$(stat -f%z "${ARTIFACT_PATH}" 2>/dev/null || stat -c%s "${ARTIFACT_PATH}" 2>/dev/null)
+if [ "$FILE_SIZE" -eq 0 ]; then
+  echo "ERROR: Artifact is empty (0 bytes)"
+  exit 1
+fi
+
+echo "✓ Artifact validated successfully"
+```
+
+### 6. Extract Artifact Information
+
+Gather artifact details:
+- Full path
+- Filename
+- File size (human-readable format)
+- Modification timestamp
+
+```bash
+# Get artifact details
+ARTIFACT_NAME=$(basename "${ARTIFACT_PATH}")
+ARTIFACT_SIZE=$(ls -lh "${ARTIFACT_PATH}" | awk '{print $5}')
+ARTIFACT_DATE=$(ls -l "${ARTIFACT_PATH}" | awk '{print $6, $7, $8}')
+
+echo "Artifact: ${ARTIFACT_NAME}"
+echo "Size: ${ARTIFACT_SIZE}"
+echo "Modified: ${ARTIFACT_DATE}"
+```
+
+### 7. Report Artifact Information
+
+Display artifact summary:
+
+```
+Artifact Located
+================
+
+Project: poc-cnaf-rh2026
+Version: 1.0.0
+Environment: presales
+
+Path: app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+Size: 1.2M
+Modified: Jan 27 10:30
+
+✓ Artifact is ready for deployment
+```
+
+## Error Handling
+
+### Maven Evaluation Failed
+
+**Error:** `Could not extract project.artifactId from pom.xml`
+
+**Possible Causes:**
+- Maven not available
+- Invalid pom.xml
+- Wrong working directory
+
+**Solution:**
+1. Verify Maven is installed: `./mvnw --version`
+2. Check pom.xml exists and is valid: `cat app/pom.xml`
+3. Run from project root directory
+4. Test Maven evaluation manually:
+   ```bash
+   ./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout -f app/pom.xml
+   ```
+
+### Artifact Not Found
+
+**Error:** No .zip file in app/target/
+
+**Possible Causes:**
+- Build was skipped but no artifacts exist
+- Build failed silently
+- Wrong target directory
+- Wrong environment used during build
+
+**Solution:**
+1. Run build without `--skip-build` flag
+2. Check Maven build output for errors
+3. Verify you're in correct project directory
+4. Check if build used different environment:
+   ```bash
+   ls -lh app/target/*.zip
+   ```
+
+### Artifact is Empty
+
+**Error:** .zip file exists but has 0 bytes
+
+**Possible Causes:**
+- Build interrupted
+- Disk space issues
+- Permissions problem
+
+**Solution:**
+1. Delete empty artifact: `rm app/target/*.zip`
+2. Re-run Maven build
+3. Check disk space: `df -h`
+
+### Multiple Artifacts with Different Environments
+
+**Error:** Multiple .zip files from different environments
+
+**Example:**
+```
+app/target/poc-cnaf-rh2026-1.0.0-local.zip
+app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+app/target/poc-cnaf-rh2026-1.0.0-qualification.zip
+```
+
+**Solution:**
+- Select most recent artifact (presales by default)
+- Optionally: Clean target directory and rebuild
+```bash
+./mvnw clean package -Dbonita.environment=presales
+```
+
+## Artifact Contents
+
+The .zip artifact contains:
+
+```
+poc-cnaf-rh2026-1.0.0-presales.zip
+├── processes/              # BPMN process definitions (.bar files)
+├── pages/                  # UI Designer pages
+├── forms/                  # UI Designer forms
+├── applications/           # Living Application descriptors
+├── profiles/               # Application profiles
+└── [other resources]
+```
+
+## Verification Commands
+
+Optional verification steps:
+
+### Check ZIP Integrity
+
+```bash
+# Verify ZIP file is not corrupted
+unzip -t app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+```
+
+**Expected Output:**
+```
+Archive:  app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+    testing: processes/...              OK
+    testing: pages/...                   OK
+    ...
+No errors detected in compressed data
+```
+
+### List ZIP Contents
+
+```bash
+# List contents of ZIP file
+unzip -l app/target/poc-cnaf-rh2026-1.0.0-presales.zip
+```
+
+This shows all files included in the deployable artifact.
+
+## Notes
+
+- The artifact filename follows pattern: `<artifactId>-<version>-<environment>.zip`
+- Maven's `help:evaluate` plugin is used for robust property extraction from pom.xml
+- The `-q -DforceStdout` flags ensure clean output (no Maven logging)
+- Artifact size varies based on application complexity (typically 500KB - 5MB)
+- The presales environment is the default for local studio deployment
+- Multiple builds will overwrite existing artifacts with same name
+- Fallback mechanism searches for any .zip if expected artifact not found
+
+## Next Step
+
+Proceed to [Step 3: Deploy](03-deploy.md)

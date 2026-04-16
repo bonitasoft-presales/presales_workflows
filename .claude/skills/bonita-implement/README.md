@@ -1,0 +1,283 @@
+# Bonita Implement Skill
+
+## Overview
+
+The `bonita-implement` skill safely deploys generated Bonita artifacts from the `docs/out/` directory into the Bonita project structure. It includes automatic backup and rollback capabilities to ensure safe deployment.
+
+## Purpose
+
+After running `bonita-analyze-docs` to generate Bonita artifacts (BDM, organization, profiles, process diagrams), this skill integrates them into the project structure and verifies the build still passes.
+
+## What It Does
+
+1. **Creates timestamped backups** of existing files before making changes
+2. **Copies artifacts** to their proper locations:
+   - `docs/out/bom.xml` → `bdm/bom.xml`
+   - `docs/out/organization.xml` → `app/organizations/organization.xml`
+   - `docs/out/profile.xml` → `app/profiles/profile.xml`
+   - `docs/out/*.proc` → `app/diagrams/*.proc`
+3. **Tests the build** with `./mvnw clean package`
+4. **Asks user if rollback is needed** if build fails
+5. **Displays error logs** to help diagnose issues
+
+## Usage
+
+```bash
+/bonita-implement
+```
+
+Or invoke via Skill tool:
+
+```
+Use the Skill tool with: skill: "bonita-implement"
+```
+
+## Prerequisites
+
+- Artifacts must exist in `docs/out/`:
+  - `bom.xml` (Business Data Model)
+  - `organization.xml` (Users, roles, groups)
+  - `profile.xml` (Access profiles)
+  - `*.proc` files (Process diagrams)
+- Maven wrapper must be present: `./mvnw`
+- Project must be a valid Bonita project
+
+## Safety Features
+
+### Automatic Backup
+
+All existing files are backed up to `.backups/bonita-implement-YYYYMMDD-HHMMSS/` before any changes are made.
+
+Backed up files:
+- `bdm/bom.xml`
+- `app/organizations/*.xml`
+- `app/profiles/*.xml`
+- `app/diagrams/*.proc`
+
+### Optional Rollback
+
+If the build fails after deployment, you'll be asked if you want to rollback:
+- If you choose to rollback: original files are restored, newly added files are removed
+- If you choose not to rollback: deployed files remain in place for inspection
+- Build error log is displayed
+- User is guided on how to fix issues
+
+### Validation
+
+After each copy operation:
+- Verifies file exists in target location
+- Checks file sizes match
+- Optionally validates XML structure
+
+## Success Scenario
+
+```
+✅ Step 1: BDM backed up and copied
+✅ Step 2: Organization backed up and copied
+✅ Step 3: Profiles backed up and copied
+✅ Step 4: Process diagrams backed up and copied (1 file)
+🔨 Step 5: Running build test...
+✅ Build PASSED - All artifacts integrated successfully!
+
+Deployment Summary:
+  - BDM: bdm/bom.xml
+  - Organization: app/organizations/organization.xml
+  - Profiles: app/profiles/profile.xml
+  - Diagrams: app/diagrams/Validation_Demande_Recrutement-1.0.proc
+
+Backups preserved in: .backups/bonita-implement-20260123-143022
+```
+
+## Failure Scenario
+
+```
+✅ Step 1: BDM backed up and copied
+✅ Step 2: Organization backed up and copied
+✅ Step 3: Profiles backed up and copied
+✅ Step 4: Process diagrams backed up and copied (1 file)
+🔨 Step 5: Running build test...
+❌ Build FAILED
+
+The build failed after deploying the artifacts.
+
+Error preview (last 20 lines):
+[ERROR messages displayed here]
+
+❓ Do you want to rollback the deployed artifacts?
+   > Yes, rollback to previous state
+   > No, keep deployed files for investigation
+
+[If user chooses Yes:]
+
+🔄 Rolling back changes from backup...
+✅ Restored bdm/bom.xml
+✅ Restored organization files
+✅ Restored profile files
+✅ Restored process diagrams
+
+═══════════════════════════════════════════════════════════
+BUILD ERROR LOG
+═══════════════════════════════════════════════════════════
+
+[Full error log displayed]
+
+🔍 Troubleshooting Guidance:
+[Detailed guidance on common issues]
+
+❌ Deployment failed and rolled back successfully
+   Project is back to its previous state
+
+[If user chooses No:]
+
+ℹ️  Deployed files kept in place for investigation
+   Build log saved in: build-output.log
+   Backups preserved in: .backups/bonita-implement-YYYYMMDD-HHMMSS
+```
+
+## Troubleshooting
+
+### Build Fails with BDM Errors
+
+**Symptoms:**
+```
+[ERROR] Failed to compile BDM
+[ERROR] Invalid field type or constraint
+```
+
+**Solution:**
+1. Check `docs/out/bom.xml` for XML schema compliance
+2. Validate field types (STRING, INTEGER, DATE, etc.)
+3. Check for circular dependencies in aggregations
+4. Verify JPQL query syntax
+
+### Build Fails with Organization Errors
+
+**Symptoms:**
+```
+[ERROR] Invalid organization structure
+[ERROR] Circular group hierarchy detected
+```
+
+**Solution:**
+1. Check `docs/out/organization.xml` structure
+2. Verify group parentPath references exist
+3. Check for circular group hierarchies
+4. Validate user/role/group names
+
+### Build Fails with Process Diagram Errors
+
+**Symptoms:**
+```
+[ERROR] Invalid process diagram
+[ERROR] XMI parsing error
+```
+
+**Solution:**
+1. Validate `.proc` files are valid XML: `xmllint --noout file.proc`
+2. Check for required XMI namespaces
+3. Verify all element IDs are unique
+4. Check actor mappings reference valid roles
+
+## File Locations
+
+### Source Files (Generated by bonita-analyze-docs)
+```
+docs/out/
+├── bom.xml
+├── organization.xml
+├── profile.xml
+└── *.proc
+```
+
+### Target Files (Deployed by bonita-implement)
+```
+bdm/
+└── bom.xml
+
+app/
+├── organizations/
+│   └── organization.xml
+├── profiles/
+│   └── profile.xml
+└── diagrams/
+    └── *.proc
+```
+
+### Backup Files
+```
+.backups/
+└── bonita-implement-YYYYMMDD-HHMMSS/
+    ├── bdm/
+    │   └── bom.xml
+    ├── organizations/
+    │   └── *.xml
+    ├── profiles/
+    │   └── *.xml
+    └── diagrams/
+        └── *.proc
+```
+
+## Integration with bonita-analyze-docs
+
+Typical workflow:
+
+1. **Generate artifacts:**
+   ```
+   /bonita-analyze-docs
+   ```
+   Creates artifacts in `docs/out/`
+
+2. **Deploy artifacts:**
+   ```
+   /bonita-implement
+   ```
+   Deploys artifacts to project structure
+
+3. **Open Bonita Studio:**
+   - Import process diagrams from `app/diagrams/`
+   - Import BDM from `bdm/bom.xml`
+   - Import and publish organization from `app/organizations/`
+
+## Manual Rollback
+
+If you need to manually revert after a successful deployment:
+
+```bash
+# Find the backup directory
+ls -lt .backups/
+
+# Restore from specific backup
+BACKUP_DIR=.backups/bonita-implement-YYYYMMDD-HHMMSS
+
+# Restore BDM
+cp -p "$BACKUP_DIR/bdm/bom.xml" bdm/bom.xml
+
+# Restore organization
+cp -p "$BACKUP_DIR/organizations/"*.xml app/organizations/
+
+# Restore profiles
+cp -p "$BACKUP_DIR/profiles/"*.xml app/profiles/
+
+# Restore diagrams
+cp -p "$BACKUP_DIR/diagrams/"*.proc app/diagrams/
+```
+
+## Notes
+
+- Backups are **never automatically deleted** - you can manually clean them up
+- Build logs are preserved in `build-output.log` for investigation
+- The skill preserves file permissions when copying
+- All steps are atomic - if one fails, no partial state is left
+
+## Version
+
+Compatible with:
+- Bonita 10.3.1
+- Maven 3.6+
+- Bash shell environments
+
+## Related Skills
+
+- `bonita-analyze-docs` - Generates the artifacts that this skill deploys
+- Future: `bonita-deploy` - Deploy to runtime environment
+- Future: `bonita-test` - Run integration tests

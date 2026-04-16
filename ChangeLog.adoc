@@ -1,5 +1,31 @@
 = Changelog
 
+== Version 1.22.0 (2026-04-16)
+
+=== Features
+
+* *`reusable_build_sca.yml`*: Add `bonita_environment` input parameter
+** Extracts hardcoded `presales` value into an optional `bonita_environment` input (default: `presales`)
+** Passed to `-Dbonita.environment` in the Maven build command
+** Fully backward-compatible: callers that omit the input continue to use `presales`
+
+=== Fixes
+
+* *`reusable_build_sca.yml`*: Add `$GITHUB_STEP_SUMMARY` output to key steps
+** AWS target table (resolved public DNS hostname)
+** Docker image build summary (environment, image name)
+** Transfer complete summary (target host, artifact)
+
+* *`test_build_sca.yml`*: Bring test workflow into compliance with conventions
+** Added `workflow_dispatch` input: `bonita_environment` (required, default `presales`)
+** Replaced full `reusable_create_server.yml` chain with a mock job that creates and uploads a fake `aws_instance.yaml` artifact
+** Passes `bonita_environment` input through to the reusable workflow
+
+=== Documentation
+
+* *`README.adoc`*: Add Inputs table and override example to `reusable_build_sca.yml` section
+* *`CLAUDE.md`*: Add explicit `bonita_environment` passing example in the "Workflows with Inputs" section
+
 == Version 1.21.0 (2026-04-10)
 
 === Fixes

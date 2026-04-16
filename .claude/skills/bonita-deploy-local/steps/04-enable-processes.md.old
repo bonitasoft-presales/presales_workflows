@@ -1,0 +1,320 @@
+# Step 4: Enable Processes
+
+Enable all deployed processes using the Bonita REST API.
+
+**Documentation:** See `tools/enable-processes/enable-processes.adoc` for comprehensive documentation.
+
+## Objective
+
+After deployment, ensure all processes are in ENABLED state so they can be instantiated.
+
+## Prerequisites
+
+- Processes deployed to Bonita server (Step 3 completed)
+- Bonita server accessible at target URL
+- Valid credentials with process management permissions
+- `curl` command available
+
+## Instructions
+
+### 1. Run Enable Processes Script
+
+Execute the shell script that uses Bonita REST API:
+
+```bash
+tools/enable-processes/enable-processes.sh
+```
+
+**With Custom Configuration:**
+
+```bash
+BONITA_URL=http://localhost:8080/bonita \
+BONITA_USERNAME=install \
+BONITA_PASSWORD=install \
+tools/enable-processes/enable-processes.sh
+```
+
+### 2. Script Workflow
+
+The script performs these operations:
+
+1. **Authenticate** - Login via `/loginservice` endpoint
+2. **Get API Token** - Extract `X-Bonita-API-Token` from cookies
+3. **List Processes** - Fetch all processes via `GET /API/bpm/process`
+4. **Enable Disabled Processes** - Update each disabled process via `PUT /API/bpm/process/{id}`
+5. **Logout** - Clean session via `/logoutservice`
+
+### 3. Expected Output
+
+**Success:**
+```
+========================================
+Bonita Process Enabler
+========================================
+Target URL: http://localhost:8080/bonita
+Username: install
+
+Step 1: Authenticating...
+✓ Authentication successful
+✓ API Token obtained
+
+Step 2: Fetching all processes...
+Found 3 processes
+
+Step 3: Enabling disabled processes...
+  Enabling: ValidationRecrutement (1.6)... ✓
+  DemandeConges (1.0): Already enabled
+  GestionFactures (2.1): Already enabled
+
+Step 4: Logging out...
+✓ Logged out
+
+========================================
+Summary
+========================================
+Total processes: 3
+Enabled: 1
+Already enabled: 2
+
+All processes are now enabled!
+```
+
+### 4. Verify Process State
+
+Check process states in Bonita Portal:
+- Navigate to BPM → Processes
+- Verify all processes show "Enabled" status
+- Test process instantiation
+
+## REST API Endpoints Used
+
+### Authentication
+```bash
+POST /loginservice
+Content-Type: application/x-www-form-urlencoded
+
+username=install&password=install&redirect=false
+```
+
+**Response:** Sets `JSESSIONID` cookie and `X-Bonita-API-Token`
+
+### List Processes
+```bash
+GET /API/bpm/process?c=9999&p=0
+Cookie: JSESSIONID=...
+X-Bonita-API-Token: ...
+```
+
+**Response:** JSON array of process objects
+```json
+[
+  {
+    "id": "123456789",
+    "name": "ValidationRecrutement",
+    "version": "1.6",
+    "activationState": "DISABLED"
+  }
+]
+```
+
+### Enable Process
+```bash
+PUT /API/bpm/process/{processId}
+Cookie: JSESSIONID=...
+X-Bonita-API-Token: ...
+Content-Type: application/json
+
+{"activationState":"ENABLED"}
+```
+
+**Response:** Updated process object with `activationState: "ENABLED"`
+
+### Logout
+```bash
+GET /logoutservice
+Cookie: JSESSIONID=...
+```
+
+## Error Handling
+
+### Authentication Failed
+
+**Error:** `✗ Authentication failed (HTTP 401)`
+
+**Possible Causes:**
+- Wrong username/password
+- User does not exist
+- Account locked
+
+**Solution:**
+1. Verify credentials are correct
+2. Try logging in via Bonita Portal
+3. Reset password if needed
+4. Check Bonita logs: `<bonita-home>/server/logs/bonita.log`
+
+### No API Token
+
+**Error:** `✗ Could not extract API token`
+
+**Possible Causes:**
+- Cookie not set by server
+- Session configuration issue
+- CSRF protection problem
+
+**Solution:**
+1. Check Bonita server is running properly
+2. Verify cookie handling in curl (check `${COOKIE_FILE}`)
+3. Try manual login test:
+   ```bash
+   curl -v -c /tmp/test-cookies.txt \
+     http://localhost:8080/bonita/loginservice \
+     -d 'username=install&password=install&redirect=false'
+   cat /tmp/test-cookies.txt
+   ```
+
+### No Processes Found
+
+**Error:** `No processes found`
+
+**Possible Causes:**
+- Deployment failed in Step 3
+- Wrong Bonita URL
+- Processes deployed to different tenant
+
+**Solution:**
+1. Check Bonita Portal: BPM → Processes
+2. Verify Step 3 deployment succeeded
+3. Check deployment logs
+4. Redeploy application
+
+### Enable Failed
+
+**Error:** `✗ (HTTP 403)` or `✗ (HTTP 500)`
+
+**Possible Causes:**
+- Insufficient permissions
+- Process in invalid state
+- Server error
+
+**Solution:**
+1. Verify user has process management permissions
+2. Check process is not being used (no active instances)
+3. Review Bonita server logs
+4. Try enabling manually via Portal
+
+### Connection Refused
+
+**Error:** `curl: (7) Failed to connect`
+
+**Possible Causes:**
+- Bonita server not running
+- Wrong URL or port
+- Network/firewall issue
+
+**Solution:**
+1. Verify server is running: `curl http://localhost:8080/bonita/loginservice`
+2. Check BONITA_URL environment variable
+3. Start Bonita server if needed
+
+## Process Activation States
+
+Bonita processes have two activation states:
+
+- **ENABLED** - Process can be instantiated
+- **DISABLED** - Process cannot be instantiated (archived state)
+
+**Why processes are disabled:**
+- Newly deployed processes are DISABLED by default
+- Administrator manually disabled the process
+- Deployment replaced existing process
+- Process has errors and was auto-disabled
+
+## Manual Alternative
+
+If script fails, enable processes manually:
+
+### Via Bonita Portal
+1. Login to Bonita Portal
+2. Navigate to BPM → Processes
+3. Select disabled process
+4. Click "Enable" button
+
+### Via REST API (curl)
+```bash
+# 1. Login
+curl -c cookies.txt -d 'username=install&password=install&redirect=false' \
+  http://localhost:8080/bonita/loginservice
+
+# 2. Get API token from cookies
+API_TOKEN=$(grep X-Bonita-API-Token cookies.txt | awk '{print $7}')
+
+# 3. List processes
+curl -b cookies.txt -H "X-Bonita-API-Token: $API_TOKEN" \
+  http://localhost:8080/bonita/API/bpm/process
+
+# 4. Enable process
+curl -b cookies.txt -H "X-Bonita-API-Token: $API_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -X PUT http://localhost:8080/bonita/API/bpm/process/{processId} \
+  -d '{"activationState":"ENABLED"}'
+
+# 5. Logout
+curl -b cookies.txt http://localhost:8080/bonita/logoutservice
+```
+
+## Notes
+
+- The script enables ALL disabled processes (no filtering)
+- Already enabled processes are skipped (idempotent)
+- Script uses temporary cookie file (cleaned up on exit)
+- Exit code 0 on success, 1 on failure
+- Supports custom Bonita URL, username, password via environment variables
+- **Script location:** `tools/enable-processes/enable-processes.sh`
+- **Documentation:** `tools/enable-processes.adoc`
+- Colored output for better readability (green=success, red=error, yellow=warning)
+
+## Environment Variables
+
+The script accepts these environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BONITA_URL` | `http://localhost:8080/bonita` | Bonita server URL |
+| `BONITA_USERNAME` | `install` | Username for authentication |
+| `BONITA_PASSWORD` | `install` | Password for authentication |
+
+**Example:**
+```bash
+BONITA_URL=http://remote-server:8080/bonita \
+BONITA_USERNAME=admin \
+BONITA_PASSWORD=secret123 \
+tools/enable-processes/enable-processes.sh
+```
+
+## Security Considerations
+
+- Credentials are passed as environment variables (not stored)
+- Cookie file is created in `/tmp` with process-specific name
+- Cookie file is automatically deleted on script exit
+- API token is extracted and used for all API calls
+- Session is properly logged out after operations
+
+## Performance
+
+- Script processes all processes in a single session
+- Typical execution time: 2-5 seconds
+- Network latency affects performance
+- Large deployments (100+ processes) may take longer
+
+## Next Steps
+
+After enabling processes:
+1. **Test Process Instantiation** - Create test cases in Bonita Portal
+2. **Configure Actors** - Map process actors to organization entities
+3. **Set up Connectors** - Configure any external system connectors
+4. **Deploy Forms** - Ensure UI forms are properly deployed
+5. **Run Integration Tests** - Execute automated test suite
+
+---
+
+**Process enablement complete!** All processes are now ready for instantiation.

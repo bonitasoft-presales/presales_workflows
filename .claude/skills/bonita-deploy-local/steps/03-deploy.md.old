@@ -1,0 +1,367 @@
+# Step 3: Deploy
+
+Deploy the application artifact to the local Bonita server using bonita-la-deployer.
+
+## Objective
+
+Deploy the .zip artifact to a running Bonita server using the bonita-la-deployer tool.
+
+## Prerequisites
+
+- Artifact located and validated (Step 2)
+- Bonita server running and accessible
+- Valid credentials for target server
+- Network connectivity
+
+## Instructions
+
+### 1. Check for Bonita-la-deployer
+
+Check if bonita-la-deployer-1.0.0.jar exists in project root:
+
+```bash
+ls -lh bonita-la-deployer-1.0.0.jar
+```
+
+**If exists:** Skip to Step 2
+
+**If not exists:** Download it using Maven
+
+### 2. Download Bonita-la-deployer (if needed)
+
+Use Maven dependency:copy to download the tool:
+
+```bash
+mvn dependency:copy \
+  -Dartifact=com.bonitasoft.deployer:bonita-la-deployer:1.0.0:jar \
+  -Dmdep.stripClassifier \
+  -DoutputDirectory=./
+```
+
+**Expected Output:**
+```
+[INFO] --- maven-dependency-plugin:3.x.x:copy (default-cli) @ ...
+[INFO] Configured Artifact: com.bonitasoft.deployer:bonita-la-deployer:1.0.0:jar
+[INFO] Copying bonita-la-deployer-1.0.0.jar to ./bonita-la-deployer-1.0.0.jar
+[INFO] BUILD SUCCESS
+```
+
+**Note:** This downloads the JAR to the project root directory.
+
+### 3. Prepare Deployment Parameters
+
+Set up deployment parameters (use defaults if not overridden by user):
+
+```bash
+# Default values
+TARGET_URL="http://localhost:8080/bonita"
+USERNAME="install"
+PASSWORD="install"
+ARTIFACT_PATH="app/target/poc-cnaf-rh2026-1.0.0-presales.zip"
+
+# Override with user-provided values if present
+# TARGET_URL="${USER_URL:-$TARGET_URL}"
+# USERNAME="${USER_USERNAME:-$USERNAME}"
+# PASSWORD="${USER_PASSWORD:-$PASSWORD}"
+```
+
+### 4. Test Server Connectivity
+
+Before deploying, verify Bonita server is accessible:
+
+```bash
+# Test if server responds
+curl -s -o /dev/null -w "%{http_code}" "${TARGET_URL}/loginservice"
+```
+
+**Expected Response:** `200` or `401` (both indicate server is running)
+
+**If connection fails:**
+- Server might not be running
+- URL might be incorrect
+- Firewall/network issues
+
+### 5. Execute Deployment
+
+Run the bonita-la-deployer command:
+
+```bash
+java -jar bonita-la-deployer-1.0.0.jar \
+  --development \
+  --targetUrl "${TARGET_URL}" \
+  --username "${USERNAME}" \
+  --password "${PASSWORD}" \
+  --file "${ARTIFACT_PATH}"
+```
+
+**Command Parameters:**
+- `--development` - Enable development mode (replaces existing artifacts)
+- `--targetUrl` - Bonita server URL
+- `--username` - Bonita username with deployment permissions
+- `--password` - User password
+- `--file` - Path to .zip artifact
+
+**Expected Output:**
+```
+Bonita LA Deployer v1.0.0
+==========================
+
+Target: http://localhost:8080/bonita
+Mode: Development
+User: install
+
+Connecting to Bonita server...
+Authentication successful.
+
+Deploying application...
+- Uploading artifact: poc-cnaf-rh2026-1.0.0-presales.zip
+- Installing processes...
+- Installing pages...
+- Configuring applications...
+
+Deployment successful!
+
+Application URL: http://localhost:8080/bonita/apps/myapp
+```
+
+### 6. Monitor Deployment Progress
+
+The deployer provides real-time feedback:
+- Connection status
+- Authentication result
+- Upload progress
+- Installation steps
+- Final status
+
+**Typical duration:** 10-30 seconds depending on artifact size.
+
+### 7. Verify Deployment Success
+
+Check the deployer exit code:
+- **Exit code 0**: Deployment successful
+- **Non-zero exit code**: Deployment failed
+
+If failed, capture error message for troubleshooting.
+
+### 8. Report Deployment Status
+
+Display deployment summary:
+
+**Success:**
+```
+Deployment Successful
+=====================
+
+Target URL: http://localhost:8080/bonita
+Username: install
+Artifact: poc-cnaf-rh2026-1.0.0-presales.zip (1.2 MB)
+
+Deployment completed successfully.
+
+Next Steps:
+- Open Bonita Portal: http://localhost:8080/bonita
+- Login with credentials: install / install
+- Access application from Applications menu
+```
+
+**Failure:**
+```
+Deployment Failed
+=================
+
+Target URL: http://localhost:8080/bonita
+Artifact: poc-cnaf-rh2026-1.0.0-presales.zip
+
+Error: [error message from deployer]
+
+Please check the error details above and retry.
+```
+
+## Error Handling
+
+### Connection Refused
+
+**Error:** `Connection refused` or `ConnectException`
+
+**Possible Causes:**
+- Bonita server not running
+- Wrong URL or port
+- Firewall blocking connection
+
+**Solution:**
+1. Start Bonita Studio/Runtime
+2. Verify server is running:
+   ```bash
+   curl http://localhost:8080/bonita/loginservice
+   ```
+3. Check server logs: `<bonita-home>/server/logs/bonita.log`
+4. Verify port 8080 is not used by another application
+
+### Authentication Failed
+
+**Error:** `401 Unauthorized` or `Invalid credentials`
+
+**Possible Causes:**
+- Wrong username/password
+- User does not exist
+- User lacks deployment permissions
+
+**Solution:**
+1. Verify credentials (default: install/install)
+2. Try with administrator account
+3. Check user exists in Bonita Organization
+4. Grant user required permissions in Bonita Portal
+
+### Deployment Timeout
+
+**Error:** Deployment hangs or times out
+
+**Possible Causes:**
+- Large artifact size
+- Server under heavy load
+- Network issues
+
+**Solution:**
+1. Check Bonita server resource usage (CPU, memory)
+2. Review server logs for errors
+3. Retry deployment
+4. If persistent, restart Bonita server
+
+### Artifact Invalid
+
+**Error:** `Invalid application format` or schema validation errors
+
+**Possible Causes:**
+- Corrupted .zip file
+- Invalid process definitions
+- Schema validation failures
+
+**Solution:**
+1. Run `/bonita-validate-artifacts` before deployment
+2. Check artifact integrity: `unzip -t <artifact.zip>`
+3. Rebuild artifact: `./mvnw clean package -Dbonita.environment=presales`
+4. Review build logs for warnings
+
+### Permission Denied
+
+**Error:** `Access denied` or `Forbidden`
+
+**Possible Causes:**
+- User lacks deployment permissions
+- Development mode not enabled
+- Existing application locked
+
+**Solution:**
+1. Ensure user has "Administrator" or "Process Manager" profile
+2. Use `--development` flag (already included by default)
+3. Check Bonita Portal for locked applications
+
+## Development Mode Behavior
+
+The `--development` flag enables:
+- **Replacement of existing artifacts**: Processes with same name/version are replaced
+- **No version conflicts**: Skips version validation
+- **In-place updates**: Living Applications are updated without recreation
+- **Debug logging**: More detailed logs
+
+**Important:** Do not use development mode in Production environments.
+
+## Bonita-la-deployer Details
+
+**Maven Coordinates:**
+```xml
+<dependency>
+  <groupId>com.bonitasoft.deployer</groupId>
+  <artifactId>bonita-la-deployer</artifactId>
+  <version>1.0.0</version>
+</dependency>
+```
+
+**Capabilities:**
+- REST API-based deployment (no UI needed)
+- Batch deployment of multiple artifacts
+- Configuration management (.bconf support)
+- Development and production modes
+- Detailed error reporting
+
+## Post-Deployment Verification
+
+### Check Bonita Portal
+
+1. Open browser: `http://localhost:8080/bonita`
+2. Login with credentials (default: install/install)
+3. Navigate to Applications menu
+4. Verify application appears in list
+
+### Check Process Installation
+
+1. In Bonita Portal, go to BPM → Processes
+2. Verify processes are listed
+3. Check process status (Enabled/Disabled)
+4. Test process instantiation
+
+### Check Server Logs
+
+Review deployment logs in Bonita server:
+
+```bash
+tail -f <bonita-home>/server/logs/bonita.log
+```
+
+Look for deployment confirmation messages.
+
+## Notes
+
+- Deployment is idempotent in development mode (can be run multiple times)
+- First deployment might take longer (database initialization)
+- Subsequent deployments are faster (updates only)
+- The deployer uses Bonita REST API for all operations
+- Network connectivity required for REST API calls
+
+## Troubleshooting Commands
+
+### Test Bonita REST API
+
+```bash
+# Test authentication
+curl -X POST \
+  -d "username=install&password=install" \
+  http://localhost:8080/bonita/loginservice
+```
+
+### Check Bonita Server Status
+
+```bash
+# Check if Bonita is running
+curl -I http://localhost:8080/bonita/loginservice
+
+# Expected response: HTTP/1.1 200 OK or 401 Unauthorized
+```
+
+### View Deployer Help
+
+```bash
+# Display all available options
+java -jar bonita-la-deployer-1.0.0.jar --help
+```
+
+## Success Criteria
+
+Deployment is successful when:
+- ✓ Deployer exits with code 0
+- ✓ No error messages in output
+- ✓ Application visible in Bonita Portal
+- ✓ Processes appear in process list
+- ✓ Application can be accessed from Applications menu
+
+## Next Steps After Deployment
+
+1. **Test Application**: Access and test the deployed application
+2. **Configure Actors**: Map process actors to organization entities
+3. **Test Processes**: Instantiate and test process flows
+4. **Review Logs**: Check for any runtime warnings or errors
+5. **Iterate**: Make changes and redeploy as needed
+
+---
+
+**Deployment Complete!** The application is now running on the local Bonita server.
