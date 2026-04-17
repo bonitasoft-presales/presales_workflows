@@ -134,3 +134,13 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "$PORT_INFO" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Run test connection script
+        if: always()
+        run: |
+          TEST_INFO=$(ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/testConnection.sh')
+          echo "$TEST_INFO"
+          echo "## createSshTunnelOnAws — Test Connection" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$TEST_INFO" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
