@@ -15,6 +15,11 @@ on:
         type: string
         default: "sshTunnel/whoUsesPort.sh"
         description: "path to the whoUsesPort.sh script (relative to workspace)"
+      test_script_path:
+        required: false
+        type: string
+        default: "sshTunnel/testConnection.sh"
+        description: "path to the test script (relative to workspace)"
     secrets:
       AWS_PRIVATE_KEY:
         required: true
@@ -47,6 +52,7 @@ jobs:
           echo "| Target host | ${{ inputs.bonita_dns_name }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Tunnel script | ${{ inputs.tunnel_script_path }} |" >> $GITHUB_STEP_SUMMARY
           echo "| whoUsesPort script | ${{ inputs.who_uses_port_script_path }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test script | ${{ inputs.test_script_path }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Setup AWS SSH private key
         env:
@@ -106,7 +112,8 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.tunnel_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/start_tunnel.sh
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.who_uses_port_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/whoUsesPort.sh
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh ~/whoUsesPort.sh'
+          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.test_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/testConnection.sh
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh ~/whoUsesPort.sh ~/testConnection.sh'
 
       - name: Start SSH tunnel
         run: |

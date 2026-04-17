@@ -1,5 +1,14 @@
 = Changelog
 
+== Version 1.23.0 (2026-04-17)
+
+=== Features
+
+* *`reusable_create_sshTunnel_on_aws.yml`*: Add `test_script_path` input parameter
+** New optional input `test_script_path` (default: `sshTunnel/testConnection.sh`), following the same pattern as `who_uses_port_script_path`
+** Script is transferred to `~/testConnection.sh` on the remote instance and made executable
+** Path shown in the configuration summary table in `$GITHUB_STEP_SUMMARY`
+
 == Version 1.22.0 (2026-04-16)
 
 === Features
