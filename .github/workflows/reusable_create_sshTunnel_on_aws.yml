@@ -18,7 +18,7 @@ on:
       test_script_path:
         required: false
         type: string
-        default: "sshTunnel/testConnection.sh"
+        default: "sshTunnel/testConnexion.sh"
         description: "path to the test script (relative to workspace)"
     secrets:
       AWS_PRIVATE_KEY:
@@ -112,8 +112,8 @@ jobs:
         run: |
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.tunnel_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/start_tunnel.sh
           scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.who_uses_port_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/whoUsesPort.sh
-          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.test_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/testConnection.sh
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh ~/whoUsesPort.sh ~/testConnection.sh'
+          scp -o StrictHostKeyChecking=no -i private_key ${{ github.workspace }}/${{ inputs.test_script_path }} ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME}:~/testConnexion.sh
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} 'chmod +x ~/start_tunnel.sh ~/whoUsesPort.sh ~/testConnexion.sh'
 
       - name: Start SSH tunnel
         run: |
@@ -138,7 +138,7 @@ jobs:
       - name: Run test connection script
         if: always()
         run: |
-          TEST_INFO=$(ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/testConnection.sh')
+          TEST_INFO=$(ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.AWS_SSH_USER }}@${AWS_PUBLIC_DNS_HOSTNAME} '~/testConnexion.sh')
           echo "$TEST_INFO"
           echo "## createSshTunnelOnAws — Test Connection" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
