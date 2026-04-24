@@ -183,7 +183,7 @@ jobs:
         id: aws_stack_id
         run: |
           if [ -n "${{ inputs.stack_id }}" ]; then
-            stackId="${{ inputs.stack_id }}"
+            stackId=$(echo "${{ inputs.stack_id }}" | sed 's/\//-/g')
           else
             REPO_NAME="${GITHUB_REPOSITORY#*/}"
             modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
