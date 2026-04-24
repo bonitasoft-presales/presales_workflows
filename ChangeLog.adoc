@@ -1,5 +1,15 @@
 = Changelog
 
+== Version 1.26.0 (2026-04-24)
+
+=== Features
+
+* *`reusable_create_server.yml`*: Add optional `stack_id` input to override computed stack ID
+** New optional input `stack_id` (default: empty); when provided, it is used directly as the AWS stack ID instead of the computed `{repo}_{branch}` value
+** Input value is sanitized (slashes replaced with dashes) consistently with the computed value
+** Stack ID is now also written to `$GITHUB_STEP_SUMMARY` as a markdown table
+* *`test_create_server.yml`*: Expose `stack_id` as a `workflow_dispatch` input for manual testing
+
 == Version 1.25.0 (2026-04-17)
 
 === Fixes
