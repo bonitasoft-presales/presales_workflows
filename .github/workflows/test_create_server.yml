@@ -1,9 +1,17 @@
 name: test_create_server
 on:
   workflow_dispatch:
+    inputs:
+      stack_id:
+        description: 'Override stack ID (leave empty to use {repo}_{branch})'
+        type: string
+        required: false
+        default: ''
 jobs:
   create_server:
     uses: ./.github/workflows/reusable_create_server.yml
+    with:
+      stack_id: ${{ inputs.stack_id }}
     secrets: inherit
 
   set_bonita_dns:
