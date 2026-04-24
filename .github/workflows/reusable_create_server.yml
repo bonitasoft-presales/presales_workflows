@@ -37,6 +37,11 @@ on:
         type: string
         required: false
         default: '1.8'
+      stack_id:
+        description: 'Override stack ID (defaults to {repo}_{branch} if not provided)'
+        type: string
+        required: false
+        default: ''
     secrets:
       JFROG_USER:
         required: true
@@ -177,10 +182,14 @@ jobs:
       - name: Set AWS stack ID
         id: aws_stack_id
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
-          modifiedBranch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')
-          stackId="${modifiedRepo}_${modifiedBranch}"
+          if [ -n "${{ inputs.stack_id }}" ]; then
+            stackId="${{ inputs.stack_id }}"
+          else
+            REPO_NAME="${GITHUB_REPOSITORY#*/}"
+            modifiedRepo=$(echo ${REPO_NAME} | sed 's/\//-/g')
+            modifiedBranch=$(echo ${{ github.ref_name }} | sed 's/\//-/g')
+            stackId="${modifiedRepo}_${modifiedBranch}"
+          fi
           echo "stackId: ${stackId}"
           echo "stackId=${stackId}" >> $GITHUB_OUTPUT
         env:
