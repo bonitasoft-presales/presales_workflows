@@ -192,6 +192,10 @@ jobs:
           fi
           echo "stackId: ${stackId}"
           echo "stackId=${stackId}" >> $GITHUB_OUTPUT
+          echo "## AWS Stack ID" >> $GITHUB_STEP_SUMMARY
+          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| stackId | \`${stackId}\` |" >> $GITHUB_STEP_SUMMARY
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
 
