@@ -22,6 +22,11 @@ on:
         type: boolean
         default: true
         description: "Fail the job when at least one server raises a license alert"
+      insecure_tls:
+        required: false
+        type: boolean
+        default: false
+        description: "Skip TLS certificate verification when a healthz endpoint redirects to HTTPS with a self-signed certificate"
     secrets:
       AWS_KEY_ID:
         required: true
@@ -64,6 +69,11 @@ on:
         type: boolean
         default: true
         description: "Fail the job when at least one server raises a license alert"
+      insecure_tls:
+        required: false
+        type: boolean
+        default: false
+        description: "Skip TLS certificate verification when a healthz endpoint redirects to HTTPS with a self-signed certificate"
 
 jobs:
   check_licenses:
@@ -134,6 +144,7 @@ jobs:
           WARNING_DAYS: ${{ inputs.expiration_warning_days }}
           CRITICAL_DAYS: ${{ inputs.expiration_critical_days }}
           FAIL_ON_ALERT: ${{ inputs.fail_on_alert }}
+          INSECURE_TLS: ${{ inputs.insecure_tls }}
           HEALTHZ_USERNAME: ${{ secrets.HEALTHZ_USERNAME }}
           HEALTHZ_PASSWORD: ${{ secrets.HEALTHZ_PASSWORD }}
         run: |
@@ -141,6 +152,7 @@ jobs:
           import base64
           import json
           import os
+          import ssl
           import urllib.request
           import urllib.error
           import yaml
@@ -154,8 +166,12 @@ jobs:
           warning_days = int(os.environ.get("WARNING_DAYS") or 30)
           critical_days = int(os.environ.get("CRITICAL_DAYS") or 7)
           fail_on_alert = (os.environ.get("FAIL_ON_ALERT") or "true").lower() == "true"
+          insecure_tls = (os.environ.get("INSECURE_TLS") or "false").lower() == "true"
           username = os.environ.get("HEALTHZ_USERNAME", "")
           password = os.environ.get("HEALTHZ_PASSWORD", "")
+
+          # when enabled, accept self-signed certs on healthz endpoints that redirect to HTTPS
+          tls_context = ssl._create_unverified_context() if insecure_tls else None
 
           # --- load instances produced by the bonita-aws "list" command ---
           try:
@@ -179,7 +195,7 @@ jobs:
               if username:
                   token = base64.b64encode(f"{username}:{password}".encode()).decode()
                   req.add_header("Authorization", f"Basic {token}")
-              with urllib.request.urlopen(req, timeout=15) as resp:
+              with urllib.request.urlopen(req, timeout=15, context=tls_context) as resp:
                   body = resp.read().decode("utf-8", "replace")
               return json.loads(body)
 
