@@ -1,5 +1,19 @@
 = Changelog
 
+== Version 1.28.0 (2026-06-19)
+
+=== Features
+
+* *`scheduled_check_licenses.yml`* (new): Scheduled "License Monitor" caller for `reusable_check_licenses.yml`
+** Runs every Monday at 09:00 Europe/Paris (cron `0 7 * * 1`, CEST/summer; use `0 8 * * 1` for CET/winter) and on `workflow_dispatch`
+** Calls the reusable workflow with explicit values (`bonita_port`, thresholds, `fail_on_alert: true`, `insecure_tls: true`) so scheduled runs are correct — `workflow_dispatch` input defaults are not applied on `schedule` events
+** Keeps `test_check_licenses.yml` `workflow_dispatch`-only per convention
+
+=== Documentation
+
+* Link the `bonita-aws` issue tracking first-class management of the `ofelia:skipLicenseCheck` tag (laurentleseigneur/bonita-aws#237) from the `reusable_check_licenses.yml` README section
+* Document `scheduled_check_licenses.yml` in `README.adoc`
+
 == Version 1.27.0 (2026-06-19)
 
 === Features
