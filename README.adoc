@@ -644,6 +644,99 @@ jobs:
 
 ---
 
+=== reusable_check_licenses.yml
+
+Lists all running AWS servers, queries each one's Bonita `healthz` endpoint, and reports the
+remaining license days. Raises an alert (GitHub annotation + flagged report) when a license is
+expiring soon, expired, or could not be verified. Always produces a human readable report in the
+step summary, even when no alert is raised.
+
+The license state is read from the `licenseExpirationDays` field of the Bonita
+`http://<server>:<port>/bonita/healthz` response (protected by basic authentication).
+
+==== Inputs
+
+[cols="2,1,1,3", options="header"]
+|===
+|Name |Required |Default |Description
+
+|`bonita_port`
+|No
+|`8081`
+|Port exposing the Bonita `healthz` endpoint on each server
+
+|`expiration_warning_days`
+|No
+|`30`
+|Warn (⚠️ expiring soon) when remaining license days is at or below this value
+
+|`expiration_critical_days`
+|No
+|`7`
+|Raise a critical alert (🔴) when remaining license days is at or below this value
+
+|`fail_on_alert`
+|No
+|`true`
+|Fail the job when at least one server raises a license alert
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`AWS_SECURITY_GROUP_ID`
+|AWS security group ID (the runner IP is added on `bonita_port` to reach each `healthz` endpoint)
+
+|`GHP_TOKEN`
+|GitHub Packages token (used to download the bonita-aws jar)
+
+|`HEALTHZ_USERNAME`
+|Username for the Bonita `healthz` endpoint basic authentication
+
+|`HEALTHZ_PASSWORD`
+|Password for the Bonita `healthz` endpoint basic authentication
+|===
+
+==== Outputs
+
+* Step summary report: thresholds, summary counts, and a per-server table
+  (Name, Status, DNS, License days, License state)
+* GitHub annotations: `::warning::` for soon-to-expire / unreachable servers, `::error::` for
+  critical / expired licenses
+* Job outputs: `total_servers` (running servers checked) and `alert_count`
+
+==== Example
+
+[source,yaml]
+----
+# Run on a schedule as a license monitor
+name: License Monitor
+on:
+  schedule:
+    - cron: '0 7 * * 1'   # every Monday 07:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check_licenses:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_check_licenses.yml@v1.26.0
+    with:
+      expiration_warning_days: 30
+      expiration_critical_days: 7
+      fail_on_alert: true
+    secrets: inherit
+----
+
+---
+
 === reusable_get_bonita_logs.yml
 
 Retrieves Docker logs from the AWS instance and uploads them as an artifact.
