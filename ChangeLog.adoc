@@ -1,5 +1,30 @@
 = Changelog
 
+== Version 1.27.0 (2026-06-19)
+
+=== Features
+
+* *`reusable_check_licenses.yml`* (new): Monitor Bonita license expiration across all deployed AWS servers
+** Lists running servers (via the `bonita-aws` `list` command) and queries each Bonita `healthz` endpoint, reading the `licenseExpirationDays` field
+** Classifies each server: ✅ OK, ⚠️ WARNING (≤ `expiration_warning_days`, default 30), 🔴 CRITICAL (≤ `expiration_critical_days`, default 7), ❌ EXPIRED, ⚪ UNREACHABLE
+** Emits `::warning::`/`::error::`/`::notice::` annotations and always writes a human readable report to `$GITHUB_STEP_SUMMARY` (thresholds, summary counts, per-server table)
+** Inputs: `bonita_port` (default `8081`), `expiration_warning_days` (default `30`), `expiration_critical_days` (default `7`), `fail_on_alert` (default `true`), `insecure_tls` (default `true`)
+** `fail_on_alert` fails the job only on red (critical/expired) or unreachable servers; warnings are reported but do not fail the job
+** `insecure_tls` skips TLS verification for `healthz` endpoints that redirect to HTTPS with a self-signed certificate
+** Non-JSON `healthz` responses report a clear `healthz did not return JSON (HTTP …, content-type …)` message
+** Instances tagged `ofelia:skipLicenseCheck` = `true` are excluded from the check and listed as skipped (🚫)
+** Job outputs: `total_servers`, `alert_count`, `fail_count`
+** Required secrets: `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `GHP_TOKEN`, `HEALTHZ_USERNAME`, `HEALTHZ_PASSWORD`
+* *`test_check_licenses.yml`* (new): `workflow_dispatch` test workflow exposing all inputs for manual testing
+
+=== Chore
+
+* *All workflows*: Bump `1arp/create-a-file-action` from `0.4.5` to `0.4.6` (clears the Node.js 20 deprecation warning) across `reusable_list_server.yml`, `reusable_check_licenses.yml`, `reusable_pr_closed.yml`, `reusable_create_server.yml`, `reusable_status_server.yml` and `test_build_sca.yml`
+
+=== Documentation
+
+* Document `reusable_check_licenses.yml` in `README.adoc` (inputs, secrets, outputs, scheduled-monitor example) and in the `CLAUDE.md` workflow/secrets tables
+
 == Version 1.26.0 (2026-04-24)
 
 === Features
