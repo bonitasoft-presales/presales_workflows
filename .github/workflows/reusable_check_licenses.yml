@@ -241,11 +241,19 @@ jobs:
           checked = 0
           alert_count = 0   # anything worth reporting: warning, critical, expired, unreachable
           fail_count = 0    # failure-worthy: red (critical/expired) or unreachable
+          skipped_count = 0 # explicitly excluded via the ofelia:skipLicenseCheck tag
 
           for i in instances:
               name = get_tag(i.get("tags"), "Name") or get_tag(i.get("tags"), "bcd:stackId") or "-"
               state = (i.get("state") or {}).get("name", "-")
               dns = i.get("publicDnsName") or ""
+
+              # explicit opt-out: ofelia:skipLicenseCheck == "true"
+              if get_tag(i.get("tags"), "ofelia:skipLicenseCheck").strip().lower() == "true":
+                  skipped_count += 1
+                  rows.append((name, state, dns or "-", "—", "skipped (ofelia:skipLicenseCheck=true)", "🚫"))
+                  print(f"::notice::Skipping license check for {name} ({dns or 'no DNS'}): ofelia:skipLicenseCheck=true")
+                  continue
 
               # only running servers expose a reachable Bonita
               if state != "running":
@@ -296,7 +304,8 @@ jobs:
               f"**Thresholds** — ⚠️ warning at ≤ {warning_days} days, 🔴 critical at ≤ {critical_days} days.",
               "",
               f"**Summary** — {checked} running server(s) checked, **{alert_count} alert(s)** "
-              f"(**{fail_count}** red/unreachable).",
+              f"(**{fail_count}** red/unreachable), {skipped_count} skipped via "
+              "`ofelia:skipLicenseCheck`.",
               "",
               "| | Name | Status | DNS | License days | License state |",
               "|--|------|--------|-----|--------------|---------------|",
