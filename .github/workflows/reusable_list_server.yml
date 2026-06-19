@@ -19,7 +19,7 @@ jobs:
           ls -ltr /home/runner/.aws
 
       - name: Create AWS config region file
-        uses: 1arp/create-a-file-action@0.4.5
+        uses: 1arp/create-a-file-action@0.4.6
         with:
           path: '/home/runner/.aws'
           isAbsolutePath: true
@@ -29,7 +29,7 @@ jobs:
             region = eu-west-1
 
       - name: Create AWS config credential file
-        uses: 1arp/create-a-file-action@0.4.5
+        uses: 1arp/create-a-file-action@0.4.6
         with:
           path: '/home/runner/.aws'
           isAbsolutePath: true
