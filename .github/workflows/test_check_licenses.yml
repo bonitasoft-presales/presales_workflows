@@ -22,6 +22,11 @@ on:
         type: boolean
         default: true
         description: "Fail the job when at least one server raises a license alert"
+      insecure_tls:
+        required: true
+        type: boolean
+        default: true
+        description: "Skip TLS certificate verification when a healthz endpoint redirects to HTTPS with a self-signed certificate"
 
 jobs:
   check_licenses:
@@ -31,4 +36,5 @@ jobs:
       expiration_warning_days: ${{ inputs.expiration_warning_days }}
       expiration_critical_days: ${{ inputs.expiration_critical_days }}
       fail_on_alert: ${{ inputs.fail_on_alert }}
+      insecure_tls: ${{ inputs.insecure_tls }}
     secrets: inherit

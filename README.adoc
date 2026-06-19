@@ -679,6 +679,11 @@ The license state is read from the `licenseExpirationDays` field of the Bonita
 |No
 |`true`
 |Fail the job when at least one server raises a license alert
+
+|`insecure_tls`
+|No
+|`true`
+|Skip TLS certificate verification when a `healthz` endpoint redirects to HTTPS with a self-signed certificate
 |===
 
 ==== Secrets
