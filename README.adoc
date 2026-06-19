@@ -654,6 +654,9 @@ step summary, even when no alert is raised.
 The license state is read from the `licenseExpirationDays` field of the Bonita
 `http://<server>:<port>/bonita/healthz` response (protected by basic authentication).
 
+Instances tagged `ofelia:skipLicenseCheck` = `true` are excluded from the check: they are
+not queried, never raise an alert, and are listed in the report as skipped (🚫).
+
 ==== Inputs
 
 [cols="2,1,1,3", options="header"]
