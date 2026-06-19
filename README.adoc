@@ -655,7 +655,9 @@ The license state is read from the `licenseExpirationDays` field of the Bonita
 `http://<server>:<port>/bonita/healthz` response (protected by basic authentication).
 
 Instances tagged `ofelia:skipLicenseCheck` = `true` are excluded from the check: they are
-not queried, never raise an alert, and are listed in the report as skipped (🚫).
+not queried, never raise an alert, and are listed in the report as skipped (🚫). First-class
+management of this tag in the `bonita-aws` library is tracked in
+https://github.com/laurentleseigneur/bonita-aws/issues/237[bonita-aws#237].
 
 ==== Inputs
 
