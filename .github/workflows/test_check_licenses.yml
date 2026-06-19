@@ -21,7 +21,7 @@ on:
         required: true
         type: boolean
         default: true
-        description: "Fail the job when at least one server raises a license alert"
+        description: "Fail the job when at least one server is red (critical/expired license) or unreachable. Warnings (expiring soon) are reported but do not fail the job."
       insecure_tls:
         required: true
         type: boolean

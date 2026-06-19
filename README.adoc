@@ -678,7 +678,7 @@ The license state is read from the `licenseExpirationDays` field of the Bonita
 |`fail_on_alert`
 |No
 |`true`
-|Fail the job when at least one server raises a license alert
+|Fail the job when at least one server is red (critical/expired license) or unreachable. Warnings (expiring soon) are reported but do not fail the job.
 
 |`insecure_tls`
 |No
@@ -717,7 +717,7 @@ The license state is read from the `licenseExpirationDays` field of the Bonita
   (Name, Status, DNS, License days, License state)
 * GitHub annotations: `::warning::` for soon-to-expire / unreachable servers, `::error::` for
   critical / expired licenses
-* Job outputs: `total_servers` (running servers checked) and `alert_count`
+* Job outputs: `total_servers` (running servers checked), `alert_count` (all alerts), and `fail_count` (red or unreachable servers)
 
 ==== Example
 
