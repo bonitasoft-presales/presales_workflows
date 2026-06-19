@@ -724,13 +724,16 @@ not queried, never raise an alert, and are listed in the report as skipped (🚫
 
 ==== Example
 
+A ready-to-use scheduled caller lives at `.github/workflows/scheduled_check_licenses.yml`
+(runs every Monday at 09:00 Europe/Paris, summer time).
+
 [source,yaml]
 ----
 # Run on a schedule as a license monitor
 name: License Monitor
 on:
   schedule:
-    - cron: '0 7 * * 1'   # every Monday 07:00 UTC
+    - cron: '0 7 * * 1'   # every Monday 09:00 Europe/Paris (CEST); use '0 8 * * 1' in winter (CET)
   workflow_dispatch:
 
 jobs:
