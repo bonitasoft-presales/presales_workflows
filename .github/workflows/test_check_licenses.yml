@@ -9,13 +9,13 @@ on:
         description: "Port exposing the Bonita healthz endpoint on each server"
       expiration_warning_days:
         required: true
-        type: number
-        default: 30
+        type: string
+        default: "30"
         description: "Warn (expiring soon) when remaining license days is at or below this value"
       expiration_critical_days:
         required: true
-        type: number
-        default: 7
+        type: string
+        default: "7"
         description: "Raise a critical alert when remaining license days is at or below this value"
       fail_on_alert:
         required: true
