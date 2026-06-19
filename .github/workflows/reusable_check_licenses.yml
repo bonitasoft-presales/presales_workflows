@@ -21,7 +21,7 @@ on:
         required: false
         type: boolean
         default: true
-        description: "Fail the job when at least one server raises a license alert"
+        description: "Fail the job when at least one server is red (critical/expired license) or unreachable. Warnings (expiring soon) are reported but do not fail the job."
       insecure_tls:
         required: false
         type: boolean
@@ -47,6 +47,9 @@ on:
       alert_count:
         description: "Number of servers raising a license alert (warning, critical, expired or unreachable)"
         value: ${{ jobs.check_licenses.outputs.alert_count }}
+      fail_count:
+        description: "Number of failure-worthy servers: red (critical/expired license) or unreachable"
+        value: ${{ jobs.check_licenses.outputs.fail_count }}
   workflow_dispatch:
     inputs:
       bonita_port:
@@ -68,7 +71,7 @@ on:
         required: false
         type: boolean
         default: true
-        description: "Fail the job when at least one server raises a license alert"
+        description: "Fail the job when at least one server is red (critical/expired license) or unreachable. Warnings (expiring soon) are reported but do not fail the job."
       insecure_tls:
         required: false
         type: boolean
@@ -81,6 +84,7 @@ jobs:
     outputs:
       total_servers: ${{ steps.check.outputs.total_servers }}
       alert_count: ${{ steps.check.outputs.alert_count }}
+      fail_count: ${{ steps.check.outputs.fail_count }}
     steps:
       - name: Create AWS config credential folder
         run: |
@@ -196,8 +200,17 @@ jobs:
                   token = base64.b64encode(f"{username}:{password}".encode()).decode()
                   req.add_header("Authorization", f"Basic {token}")
               with urllib.request.urlopen(req, timeout=15, context=tls_context) as resp:
+                  status = resp.status
+                  ctype = resp.headers.get("Content-Type", "") or "unknown"
                   body = resp.read().decode("utf-8", "replace")
-              return json.loads(body)
+              try:
+                  return json.loads(body)
+              except json.JSONDecodeError:
+                  snippet = " ".join(body.split())[:80] or "<empty>"
+                  raise ValueError(
+                      f"healthz did not return JSON "
+                      f"(HTTP {status}, content-type '{ctype}'): {snippet}"
+                  )
 
           # --- classify a server based on its remaining license days ---
           def classify(days):
@@ -214,7 +227,8 @@ jobs:
           rows = []
           annotations = []
           checked = 0
-          alert_count = 0
+          alert_count = 0   # anything worth reporting: warning, critical, expired, unreachable
+          fail_count = 0    # failure-worthy: red (critical/expired) or unreachable
 
           for i in instances:
               name = get_tag(i.get("tags"), "Name") or get_tag(i.get("tags"), "bcd:stackId") or "-"
@@ -243,14 +257,16 @@ jobs:
                       alert_count += 1
                       msg = f"License {level} on {name} ({dns}): {days_label} day(s) remaining"
                       if level in ("CRITICAL", "EXPIRED"):
+                          fail_count += 1
                           annotations.append(("error", msg))
                       else:
                           annotations.append(("warning", msg))
-              except Exception as e:  # unreachable / auth error / bad payload
+              except Exception as e:  # unreachable / auth error / non-JSON payload
                   alert_count += 1
-                  reason = str(e).replace("\n", " ")[:120]
+                  fail_count += 1
+                  reason = str(e).replace("\n", " ")[:160]
                   rows.append((name, state, dns, "?", f"UNREACHABLE ({reason})", "⚪"))
-                  annotations.append(("warning", f"Could not verify license on {name} ({dns}): {reason}"))
+                  annotations.append(("error", f"Could not verify license on {name} ({dns}): {reason}"))
 
           # --- emit GitHub annotations (the "alerts") ---
           for level, msg in annotations:
@@ -267,7 +283,8 @@ jobs:
               "",
               f"**Thresholds** — ⚠️ warning at ≤ {warning_days} days, 🔴 critical at ≤ {critical_days} days.",
               "",
-              f"**Summary** — {checked} running server(s) checked, **{alert_count} alert(s)**.",
+              f"**Summary** — {checked} running server(s) checked, **{alert_count} alert(s)** "
+              f"(**{fail_count}** red/unreachable).",
               "",
               "| | Name | Status | DNS | License days | License state |",
               "|--|------|--------|-----|--------------|---------------|",
@@ -298,10 +315,12 @@ jobs:
               with open(out, "a") as f:
                   f.write(f"total_servers={checked}\n")
                   f.write(f"alert_count={alert_count}\n")
+                  f.write(f"fail_count={fail_count}\n")
 
-          # --- fail the job on alert when requested ---
-          if alert_count and fail_on_alert:
+          # --- fail the job when a server is red (critical/expired) or unreachable ---
+          if fail_count and fail_on_alert:
               raise SystemExit(
-                  f"{alert_count} license alert(s) raised; failing job (fail_on_alert=true)."
+                  f"{fail_count} server(s) red (critical/expired) or unreachable; "
+                  "failing job (fail_on_alert=true)."
               )
           EOF
