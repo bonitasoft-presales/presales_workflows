@@ -1,0 +1,18 @@
+name: License Monitor
+on:
+  schedule:
+    # 09:00 Europe/Paris during summer (CEST, UTC+2).
+    # GitHub cron has no timezone/DST support; for winter (CET, UTC+1) use '0 8 * * 1'.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check_licenses:
+    uses: ./.github/workflows/reusable_check_licenses.yml
+    with:
+      bonita_port: "8081"
+      expiration_warning_days: "30"
+      expiration_critical_days: "7"
+      fail_on_alert: true
+      insecure_tls: true
+    secrets: inherit
