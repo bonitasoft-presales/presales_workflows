@@ -92,7 +92,7 @@ jobs:
           ls -ltr /home/runner/.aws
 
       - name: Create AWS config region file
-        uses: 1arp/create-a-file-action@0.4.5
+        uses: 1arp/create-a-file-action@0.4.6
         with:
           path: '/home/runner/.aws'
           isAbsolutePath: true
@@ -102,7 +102,7 @@ jobs:
             region = eu-west-1
 
       - name: Create AWS config credential file
-        uses: 1arp/create-a-file-action@0.4.5
+        uses: 1arp/create-a-file-action@0.4.6
         with:
           path: '/home/runner/.aws'
           isAbsolutePath: true
@@ -140,6 +140,18 @@ jobs:
           java -jar bonita-aws-${bonitaAwsVersion}-jar-with-dependencies.jar \
           -c list \
           --key-name ${keyName}
+
+          # step summary
+          INSTANCE_COUNT=$(grep -c "publicDnsName" instances.yaml 2>/dev/null || echo 0)
+          {
+            echo "## ☁️ List AWS servers"
+            echo ""
+            echo "_Workflow_: \`checkLicenses\` — _Step_: List AWS servers"
+            echo "_Ref_: \`${GITHUB_WORKFLOW_REF:-local}\`"
+            echo ""
+            echo "Downloaded \`bonita-aws-${bonitaAwsVersion}\` jar and listed AWS servers."
+            echo "Instances discovered: **${INSTANCE_COUNT}** (license states detailed below)."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check Bonita license state on each server
         id: check
