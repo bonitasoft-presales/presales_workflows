@@ -682,7 +682,7 @@ The license state is read from the `licenseExpirationDays` field of the Bonita
 
 |`insecure_tls`
 |No
-|`false`
+|`true`
 |Skip TLS certificate verification when a `healthz` endpoint redirects to HTTPS with a self-signed certificate
 |===
 

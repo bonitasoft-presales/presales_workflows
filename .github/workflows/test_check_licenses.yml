@@ -25,7 +25,7 @@ on:
       insecure_tls:
         required: true
         type: boolean
-        default: false
+        default: true
         description: "Skip TLS certificate verification when a healthz endpoint redirects to HTTPS with a self-signed certificate"
 
 jobs:
