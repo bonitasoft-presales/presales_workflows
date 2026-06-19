@@ -1,0 +1,291 @@
+name: checkLicenses
+on:
+  workflow_call:
+    inputs:
+      bonita_port:
+        required: false
+        type: string
+        default: "8081"
+        description: "Port exposing the Bonita healthz endpoint on each server"
+      expiration_warning_days:
+        required: false
+        type: number
+        default: 30
+        description: "Warn (expiring soon) when remaining license days is at or below this value"
+      expiration_critical_days:
+        required: false
+        type: number
+        default: 7
+        description: "Raise a critical alert when remaining license days is at or below this value"
+      fail_on_alert:
+        required: false
+        type: boolean
+        default: true
+        description: "Fail the job when at least one server raises a license alert"
+    secrets:
+      AWS_KEY_ID:
+        required: true
+      AWS_ACCESS_KEY:
+        required: true
+      AWS_SECURITY_GROUP_ID:
+        required: true
+      GHP_TOKEN:
+        required: true
+      HEALTHZ_USERNAME:
+        required: true
+      HEALTHZ_PASSWORD:
+        required: true
+    outputs:
+      total_servers:
+        description: "Number of running servers checked"
+        value: ${{ jobs.check_licenses.outputs.total_servers }}
+      alert_count:
+        description: "Number of servers raising a license alert (warning, critical, expired or unreachable)"
+        value: ${{ jobs.check_licenses.outputs.alert_count }}
+  workflow_dispatch:
+    inputs:
+      bonita_port:
+        required: false
+        type: string
+        default: "8081"
+        description: "Port exposing the Bonita healthz endpoint on each server"
+      expiration_warning_days:
+        required: false
+        type: number
+        default: 30
+        description: "Warn (expiring soon) when remaining license days is at or below this value"
+      expiration_critical_days:
+        required: false
+        type: number
+        default: 7
+        description: "Raise a critical alert when remaining license days is at or below this value"
+      fail_on_alert:
+        required: false
+        type: boolean
+        default: true
+        description: "Fail the job when at least one server raises a license alert"
+
+jobs:
+  check_licenses:
+    runs-on: ubuntu-latest
+    outputs:
+      total_servers: ${{ steps.check.outputs.total_servers }}
+      alert_count: ${{ steps.check.outputs.alert_count }}
+    steps:
+      - name: Create AWS config credential folder
+        run: |
+          mkdir -p /home/runner/.aws
+          ls -ltr /home/runner/.aws
+
+      - name: Create AWS config region file
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '/home/runner/.aws'
+          isAbsolutePath: true
+          file: 'config'
+          content: |
+            [default]
+            region = eu-west-1
+
+      - name: Create AWS config credential file
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: '/home/runner/.aws'
+          isAbsolutePath: true
+          file: 'credentials'
+          content: |
+            [default]
+            aws_access_key_id = ${{ secrets.AWS_KEY_ID }}
+            aws_secret_access_key = ${{ secrets.AWS_ACCESS_KEY }}
+            region = eu-west-1
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      # Allow the runner to reach the Bonita healthz endpoint of each server
+      - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
+        with:
+          aws_security_group_ids: ${{ secrets.AWS_SECURITY_GROUP_ID }}
+          port_range: ${{ inputs.bonita_port }}
+
+      - name: List AWS servers
+        env:
+          GH_TOKEN: ${{ secrets.GHP_TOKEN }}
+        run: |
+          bonitaAwsVersion="1.8"
+          keyName="presale-ci-eu-west-1"
+
+          # get aws presales lib
+          gh release download bonita-aws-${bonitaAwsVersion} \
+            --repo laurentleseigneur/bonita-aws \
+            --pattern "*-jar-with-dependencies.jar"
+          # list servers
+          java -jar bonita-aws-${bonitaAwsVersion}-jar-with-dependencies.jar \
+          -c list \
+          --key-name ${keyName}
+
+      - name: Check Bonita license state on each server
+        id: check
+        env:
+          BONITA_PORT: ${{ inputs.bonita_port }}
+          WARNING_DAYS: ${{ inputs.expiration_warning_days }}
+          CRITICAL_DAYS: ${{ inputs.expiration_critical_days }}
+          FAIL_ON_ALERT: ${{ inputs.fail_on_alert }}
+          HEALTHZ_USERNAME: ${{ secrets.HEALTHZ_USERNAME }}
+          HEALTHZ_PASSWORD: ${{ secrets.HEALTHZ_PASSWORD }}
+        run: |
+          python3 << 'EOF'
+          import base64
+          import json
+          import os
+          import urllib.request
+          import urllib.error
+          import yaml
+          from datetime import datetime, timezone
+
+          WORKFLOW = "checkLicenses"
+          STEP = "Check Bonita license state on each server"
+          VERSION = os.environ.get("GITHUB_WORKFLOW_REF", "local")
+
+          port = os.environ.get("BONITA_PORT", "8081")
+          warning_days = int(os.environ.get("WARNING_DAYS") or 30)
+          critical_days = int(os.environ.get("CRITICAL_DAYS") or 7)
+          fail_on_alert = (os.environ.get("FAIL_ON_ALERT") or "true").lower() == "true"
+          username = os.environ.get("HEALTHZ_USERNAME", "")
+          password = os.environ.get("HEALTHZ_PASSWORD", "")
+
+          # --- load instances produced by the bonita-aws "list" command ---
+          try:
+              with open("instances.yaml") as f:
+                  data = yaml.safe_load(f)
+          except FileNotFoundError:
+              data = []
+
+          instances = [i for group in (data or []) for i in (group or [])]
+
+          def get_tag(tags, key):
+              for t in (tags or []):
+                  if t.get("key") == key:
+                      return t.get("value", "")
+              return ""
+
+          # --- query the healthz endpoint of a single server ---
+          def query_healthz(dns):
+              url = f"http://{dns}:{port}/bonita/healthz"
+              req = urllib.request.Request(url)
+              if username:
+                  token = base64.b64encode(f"{username}:{password}".encode()).decode()
+                  req.add_header("Authorization", f"Basic {token}")
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  body = resp.read().decode("utf-8", "replace")
+              return json.loads(body)
+
+          # --- classify a server based on its remaining license days ---
+          def classify(days):
+              if days is None:
+                  return ("EXPIRED", "❌", True)
+              if days < 0:
+                  return ("EXPIRED", "❌", True)
+              if days <= critical_days:
+                  return ("CRITICAL", "🔴", True)
+              if days <= warning_days:
+                  return ("WARNING", "⚠️", True)
+              return ("OK", "✅", False)
+
+          rows = []
+          annotations = []
+          checked = 0
+          alert_count = 0
+
+          for i in instances:
+              name = get_tag(i.get("tags"), "Name") or get_tag(i.get("tags"), "bcd:stackId") or "-"
+              state = (i.get("state") or {}).get("name", "-")
+              dns = i.get("publicDnsName") or ""
+
+              # only running servers expose a reachable Bonita
+              if state != "running":
+                  rows.append((name, state, dns or "-", "—", "skipped (not running)", "⏭️"))
+                  continue
+              if not dns:
+                  rows.append((name, state, "-", "—", "skipped (no public DNS)", "⏭️"))
+                  continue
+
+              checked += 1
+              try:
+                  health = query_healthz(dns)
+                  raw_days = health.get("licenseExpirationDays")
+                  days = int(raw_days) if raw_days not in (None, "") else None
+                  level, icon, is_alert = classify(days)
+                  platform = health.get("platformState", "-")
+                  days_label = f"{days}" if days is not None else "n/a"
+                  state_label = f"{level} (platform: {platform})"
+                  rows.append((name, state, dns, days_label, state_label, icon))
+                  if is_alert:
+                      alert_count += 1
+                      msg = f"License {level} on {name} ({dns}): {days_label} day(s) remaining"
+                      if level in ("CRITICAL", "EXPIRED"):
+                          annotations.append(("error", msg))
+                      else:
+                          annotations.append(("warning", msg))
+              except Exception as e:  # unreachable / auth error / bad payload
+                  alert_count += 1
+                  reason = str(e).replace("\n", " ")[:120]
+                  rows.append((name, state, dns, "?", f"UNREACHABLE ({reason})", "⚪"))
+                  annotations.append(("warning", f"Could not verify license on {name} ({dns}): {reason}"))
+
+          # --- emit GitHub annotations (the "alerts") ---
+          for level, msg in annotations:
+              print(f"::{level}::{msg}")
+
+          # --- build the human readable report ---
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+          lines = [
+              "## 🔑 Bonita License Check Report",
+              "",
+              f"_Workflow_: `{WORKFLOW}` — _Step_: {STEP}",
+              f"_Ref_: `{VERSION}`",
+              f"_Generated_: {now}",
+              "",
+              f"**Thresholds** — ⚠️ warning at ≤ {warning_days} days, 🔴 critical at ≤ {critical_days} days.",
+              "",
+              f"**Summary** — {checked} running server(s) checked, **{alert_count} alert(s)**.",
+              "",
+              "| | Name | Status | DNS | License days | License state |",
+              "|--|------|--------|-----|--------------|---------------|",
+          ]
+          for name, state, dns, days_label, state_label, icon in rows:
+              lines.append(f"| {icon} | {name} | {state} | {dns} | {days_label} | {state_label} |")
+
+          if not rows:
+              lines.append("| ⏭️ | — | No instances found | — | — | — |")
+
+          if alert_count:
+              lines += [
+                  "",
+                  f"> ⚠️ **{alert_count} server(s) need attention.** "
+                  "See the annotations above for details.",
+              ]
+          else:
+              lines += ["", "> ✅ All checked licenses are valid and not expiring soon."]
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with open(summary, "a") as f:
+                  f.write("\n".join(lines) + "\n")
+
+          # --- export job outputs ---
+          out = os.environ.get("GITHUB_OUTPUT")
+          if out:
+              with open(out, "a") as f:
+                  f.write(f"total_servers={checked}\n")
+                  f.write(f"alert_count={alert_count}\n")
+
+          # --- fail the job on alert when requested ---
+          if alert_count and fail_on_alert:
+              raise SystemExit(
+                  f"{alert_count} license alert(s) raised; failing job (fail_on_alert=true)."
+              )
+          EOF
