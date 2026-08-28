@@ -40,6 +40,52 @@ This skill performs comprehensive analysis of GitHub Actions workflows in `.gith
 - Reports if updates are available and what changed
 - Offers to update workflows if newer versions found
 
+### 3bis. Governance & Trigger Conventions
+
+**Trigger convention (enforced):**
+Any caller job that uses `reusable_create_server.yml`, `reusable_build_sca.yml` or
+`reusable_deploy_sca.yml` must sit in a workflow triggered **only** by `workflow_dispatch`.
+No instance creation, build or deployment may start automatically from `push` or
+`pull_request`. Read-only monitoring (`reusable_list_server.yml`,
+`reusable_check_licenses.yml`), the delete-only `reusable_pr_closed.yml` and the scheduled
+TTL cleanup are exempt — they are meant to run automatically.
+
+**Governance inputs (`reusable_create_server.yml`, since v2.0.0 — breaking):**
+
+| Input | Required | Default | AWS tag |
+|-------|----------|---------|---------|
+| `typology` | **Yes** | – | `presales:typology` (`T1_poc` or `T2_showroom`) |
+| `owner` | **Yes** | – | `presales:owner` |
+| `ttl_hours` | No | `48` | `presales:expires-at` (T1 only, ignored for T2) |
+
+Up-to-date call:
+
+```yaml
+name: Deploy Demo
+on:
+  workflow_dispatch:
+
+jobs:
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v2.0.0
+    with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
+      ttl_hours: '48'
+    secrets: inherit
+```
+
+A caller pinned to `@v2.0.0` or later without `typology` and `owner` fails at startup.
+T1 instances are destroyed automatically by `scheduled_cleanup_stale_servers.yml` once
+`presales:expires-at` is passed; untagged instances and instances tagged
+`ofelia:skipLicenseCheck=true` are left untouched.
+
+**Stack ID convention:**
+`reusable_create_server.yml` and `reusable_pr_closed.yml` both compute `{repo}_{branch}`
+(slashes replaced by dashes) and both accept the same optional `stack_id` override. A caller
+overriding `stack_id` at creation must pass the same value to `reusable_pr_closed.yml`,
+otherwise the PR server is never deleted.
+
 ### 4. Bonita-Specific Validation
 **Special handling for Bonita licence secrets:**
 - Validates licence secret naming matches project version

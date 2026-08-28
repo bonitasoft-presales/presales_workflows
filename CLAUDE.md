@@ -37,8 +37,22 @@ All reusable workflows are in `.github/workflows/` with the naming convention:
 | `reusable_status_server.yml` | Gets status of existing AWS server |
 | `reusable_list_server.yml` | Lists all AWS servers with formatted markdown table (name, status, DNS, launch time) |
 | `reusable_check_licenses.yml` | Lists servers and checks each Bonita `healthz` license state; alerts on soon-to-expire/expired/unreachable and reports remaining license days |
+| `reusable_cleanup_stale_servers.yml` | Centralised TTL cleanup: destroys running servers whose `presales:expires-at` tag has passed |
 | `reusable_get_bonita_logs.yml` | Retrieves Docker logs from AWS instance |
 | `reusable_pr_closed.yml` | Handles PR closure events (merged or closed without merge) |
+
+### Trigger Policy (must be enforced)
+
+**No instance creation, build or deployment may start automatically.** Any caller workflow
+that uses `reusable_create_server.yml`, `reusable_build_sca.yml` or
+`reusable_deploy_sca.yml` must be triggered by `workflow_dispatch` **only** — never `push`,
+never `pull_request`.
+
+Exempt, and deliberately automatic:
+- Read-only monitoring: `reusable_list_server.yml`, `reusable_check_licenses.yml` /
+  `scheduled_check_licenses.yml`
+- Resource deletion: `reusable_pr_closed.yml` (triggered on `pull_request: closed`)
+- TTL cleanup: `reusable_cleanup_stale_servers.yml` / `scheduled_cleanup_stale_servers.yml`
 
 ### AWS Infrastructure
 
@@ -46,12 +60,36 @@ Uses `bonita-aws` library (v1.8) for EC2 management:
 - Region: `eu-west-1`
 - AMI: Ubuntu Server 2024.04 LTS x86 (`ami-0776c814353b4814d`)
 - Instance type: `t3.large`
-- Stack ID format: `{repo-name}_{branch-name}`
+- Stack ID format: `{repo-name}_{branch-name}` — computed identically by
+  `reusable_create_server.yml` and `reusable_pr_closed.yml`, both overridable with the same
+  optional `stack_id` input
+
+### Governance Tagging and TTL Cleanup
+
+`reusable_create_server.yml` tags every instance it creates:
+
+| Tag | Source | Notes |
+|-----|--------|-------|
+| `presales:typology` | required `typology` input | `T1_poc` or `T2_showroom` |
+| `presales:owner` | required `owner` input | consultant or team responsible |
+| `presales:expires-at` | `now + ttl_hours` (default `48`) | UTC ISO-8601; set for `T1_poc` only |
+
+`scheduled_cleanup_stale_servers.yml` runs every 6 hours and calls
+`reusable_cleanup_stale_servers.yml` with `dry_run: 'false'`. It destroys a running instance
+only when `presales:expires-at` is present, parseable and in the past, and the instance is
+not tagged `ofelia:skipLicenseCheck=true`. Instances with no `presales:expires-at` (including
+every `T2_showroom`) are never destroyed automatically.
+
+**Caveat:** the tagging step resolves the EC2 instance ID from the `instanceId` field of
+`aws_instance.yaml`. That field is not confirmed against the `bonita-aws` output; when it is
+missing the step emits a `::warning::` and is skipped, so the instance is created but not
+governed by the TTL cleanup. Verify a real run's step summary before treating the mechanism
+as reliable.
 
 ### Artifact Flow Between Jobs
 
 Workflows pass data via GitHub artifacts:
-- `aws_instance.yaml` - Contains EC2 instance info (publicDnsName)
+- `aws_instance.yaml` - Contains EC2 instance info (publicDnsName; `instanceId` expected by the governance tagging step but not confirmed)
 - `pre_requisites.yaml` - Contains IT_FOLDER_EXISTS and DATAGEN_FOLDER_EXISTS flags
 
 ## Required Secrets Per Workflow
@@ -69,6 +107,7 @@ Each reusable workflow explicitly declares its required secrets. Callers must pa
 | `reusable_status_server.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `AWS_KEY_ID`, `AWS_ACCESS_KEY` |
 | `reusable_list_server.yml` | `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `GHP_TOKEN` |
 | `reusable_check_licenses.yml` | `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `GHP_TOKEN`, `HEALTHZ_USERNAME`, `HEALTHZ_PASSWORD` |
+| `reusable_cleanup_stale_servers.yml` | `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `GHP_TOKEN` |
 | `reusable_run_it.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN` |
 | `reusable_run_datagen.yml` | `JFROG_USER`, `JFROG_TOKEN`, `GHP_USER`, `GHP_TOKEN`, `SF_USERNAME` (opt), `SF_PASSWORD` (opt), `SF_TOKEN` (opt), `OPENAI_API_KEY` (opt) |
 | `reusable_get_bonita_logs.yml` | `AWS_PRIVATE_KEY`, `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `AWS_SECURITY_GROUP_ID`, `AWS_SSH_USER` |
@@ -95,12 +134,14 @@ The simplest approach - automatically passes all secrets from the calling reposi
 ```yaml
 name: Deploy Demo
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
+    with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
     secrets: inherit
 
   build_sca:
@@ -121,12 +162,14 @@ Pass only the required secrets explicitly (useful for fine-grained control):
 ```yaml
 name: Deploy Demo
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
+    with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
     secrets:
       JFROG_USER: ${{ secrets.JFROG_USER }}
       JFROG_TOKEN: ${{ secrets.JFROG_TOKEN }}
@@ -145,6 +188,18 @@ Some workflows require both inputs and secrets:
 
 ```yaml
 jobs:
+  create_server:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
+    with:
+      # Required since v2.0.0
+      typology: 'T1_poc'          # T1_poc | T2_showroom
+      owner: 'firstname.lastname'
+      # Optional: TTL in hours before automatic cleanup (T1 only, default '48')
+      ttl_hours: '48'
+      # Optional: override the computed {repo}_{branch} stack ID
+      # stack_id: 'my-demo_main'
+    secrets: inherit
+
   build_sca:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_build_sca.yml@v1.28.0
     with:
@@ -281,6 +336,10 @@ jobs:
 
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
+    with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
+      ttl_hours: '48'
     secrets: inherit
 
   build_sca:

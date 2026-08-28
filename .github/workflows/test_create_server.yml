@@ -7,11 +7,32 @@ on:
         type: string
         required: false
         default: ''
+      typology:
+        description: 'Typologie presales:typology'
+        type: choice
+        required: true
+        default: 'T1_poc'
+        options:
+          - 'T1_poc'
+          - 'T2_showroom'
+      owner:
+        description: 'presales:owner -- consultant ou équipe responsable'
+        type: string
+        required: true
+        default: 'presales-ci'
+      ttl_hours:
+        description: 'presales:expires-at -- durée de vie en heures (T1 uniquement)'
+        type: string
+        required: false
+        default: '48'
 jobs:
   create_server:
     uses: ./.github/workflows/reusable_create_server.yml
     with:
       stack_id: ${{ inputs.stack_id }}
+      typology: ${{ inputs.typology }}
+      owner: ${{ inputs.owner }}
+      ttl_hours: ${{ inputs.ttl_hours }}
     secrets: inherit
 
   set_bonita_dns:

@@ -18,6 +18,16 @@ This repository contains reusable GitHub Actions workflows that automate:
 
 == Quick Start
 
+[IMPORTANT]
+====
+*Trigger policy.* Any caller workflow that provisions an instance, builds or deploys
+(`reusable_create_server.yml`, `reusable_build_sca.yml`, `reusable_deploy_sca.yml`) must be
+triggered by `workflow_dispatch` **only** — never by `push` or `pull_request`. Read-only
+monitoring (`reusable_list_server.yml`, `reusable_check_licenses.yml`), the delete-only
+`reusable_pr_closed.yml` and the scheduled TTL cleanup are the exceptions: they are meant to
+run automatically.
+====
+
 === Using `secrets: inherit` (Recommended)
 
 The simplest approach - automatically passes all secrets from the calling repository:
@@ -26,12 +36,14 @@ The simplest approach - automatically passes all secrets from the calling reposi
 ----
 name: Deploy Demo
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
+    with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
     secrets: inherit
 
   build_sca:
@@ -91,7 +103,29 @@ Provisions an AWS EC2 instance with Docker and Docker Compose installed.
 |No
 |`1.8`
 |Version of bonita-aws library
+
+|`stack_id`
+|No
+|`''`
+|Override stack ID (defaults to `{repo}_{branch}` if not provided)
+
+|`typology`
+|*Yes*
+|-
+|`presales:typology` — `T1_poc` or `T2_showroom`
+
+|`owner`
+|*Yes*
+|-
+|`presales:owner` — consultant or team responsible for the instance
+
+|`ttl_hours`
+|No
+|`48`
+|`presales:expires-at` — lifetime in hours before automatic cleanup (T1 only; ignored when `typology=T2_showroom`)
 |===
+
+WARNING: `typology` and `owner` are **required** since v2.0.0. A caller pinned to `@v2.0.0` or later without them fails at startup.
 
 ==== Secrets
 
@@ -127,18 +161,48 @@ Provisions an AWS EC2 instance with Docker and Docker Compose installed.
 |AWS SSH username
 |===
 
+==== Governance tags
+
+After the instance is created, the workflow tags it with:
+
+[cols="2,3", options="header"]
+|===
+|Tag |Value
+
+|`presales:typology`
+|Value of the `typology` input (`T1_poc` or `T2_showroom`)
+
+|`presales:owner`
+|Value of the `owner` input
+
+|`presales:expires-at`
+|`now + ttl_hours`, UTC ISO-8601 (`%Y-%m-%dT%H:%M:%SZ`). Set for `T1_poc` only — `T2_showroom` instances get no expiry and are never cleaned up automatically.
+|===
+
+`presales:expires-at` is what `reusable_cleanup_stale_servers.yml` reads to destroy expired instances.
+
+NOTE: The tagging step resolves the EC2 instance ID from the `instanceId` field of `aws_instance.yaml`. If that field is absent, the step emits a `::warning::` and is skipped — the instance is created normally but is **not** governed by the TTL cleanup. Check the step summary of a real run before relying on the mechanism.
+
 ==== Outputs
 
 * Uploads `aws_instance.yaml` artifact containing the EC2 instance public DNS name
+* Writes the stack ID and the governance tags to the job step summary
 
 ==== Example
 
 [source,yaml]
 ----
+name: Deploy Demo
+on:
+  workflow_dispatch:
+
 jobs:
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
     with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
+      ttl_hours: '48'
       instance_type: 't3.xlarge'
       disk_size: '50'
     secrets: inherit
@@ -877,6 +941,86 @@ jobs:
 
 ---
 
+=== reusable_cleanup_stale_servers.yml
+
+Centralised TTL cleanup: lists the running AWS servers and destroys those whose
+`presales:expires-at` tag is in the past. The tag is set by
+`reusable_create_server.yml` for `T1_poc` instances only.
+
+==== Inputs
+
+[cols="2,1,2,3", options="header"]
+|===
+|Name |Required |Default |Description
+
+|`dry_run`
+|No
+|`'false'`
+|If `'true'`, lists the instances that would be destroyed without destroying them
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+
+|`GHP_TOKEN`
+|GitHub Packages token (used to download the `bonita-aws` release)
+|===
+
+==== Selection rules
+
+An instance is destroyed only if **all** of the following hold:
+
+* its state is `running`;
+* it is not tagged `ofelia:skipLicenseCheck=true` (explicit opt-out);
+* it carries a `presales:expires-at` tag;
+* that tag parses as an ISO-8601 timestamp;
+* that timestamp is in the past.
+
+Every other case is skipped and reported in the log: an instance without
+`presales:expires-at` is left alone (retag it manually if that was an oversight), and an
+unparseable tag is left alone out of caution. `T2_showroom` instances never get an
+expiry tag and are therefore never cleaned up automatically.
+
+==== Outputs
+
+* Step summary: run mode (dry-run or real) and the list of stack IDs destroyed
+* Job log: one line per instance explaining why it was kept or destroyed
+
+==== Example
+
+A ready-to-use scheduled caller lives at `.github/workflows/scheduled_cleanup_stale_servers.yml`
+(runs every 6 hours, `dry_run: 'false'`).
+
+[source,yaml]
+----
+name: TTL Cleanup
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup_stale_servers:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_cleanup_stale_servers.yml@v1.28.0
+    with:
+      dry_run: 'false'
+    secrets: inherit
+----
+
+TIP: Run it once with `dry_run: 'true'` (the `workflow_dispatch` default of
+`test_cleanup_stale_servers.yml`) to see what would be destroyed before enabling the schedule.
+
+---
+
 === reusable_pr_closed.yml
 
 Handles PR closure events (merged or closed without merge): reports the PR outcome, then looks up and deletes the AWS server that was provisioned for the PR branch.
@@ -1034,6 +1178,10 @@ jobs:
 
   create_server:
     uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v1.28.0
+    with:
+      typology: 'T1_poc'
+      owner: 'firstname.lastname'
+      ttl_hours: '48'
     secrets: inherit
 
   build_sca:
