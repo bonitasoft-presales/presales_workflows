@@ -1,5 +1,63 @@
 = Changelog
 
+== Version 2.0.0 (2026-08-28)
+
+[WARNING]
+====
+*Breaking change.* `reusable_create_server.yml` now declares two **required** inputs,
+`typology` and `owner`. Any caller pinned to `@v2.0.0` or later without them fails at
+startup. Add them to every calling repository before bumping the tag.
+====
+
+=== Features
+
+* *`reusable_create_server.yml`*: Governance tagging of every provisioned instance
+** New **required** inputs `typology` (`T1_poc` or `T2_showroom`) and `owner` (consultant or team responsible)
+** New optional input `ttl_hours` (default `48`): lifetime in hours before automatic cleanup
+** New step "Poser les tags de gouvernance", inserted after "Copy aws yaml file" and before "Archive artifact instance.yaml file", tagging the instance with `presales:typology`, `presales:owner` and — for `T1_poc` only — `presales:expires-at` (`now + ttl_hours`, UTC ISO-8601). `T2_showroom` instances get no expiry and are never cleaned up automatically.
+** `aws-actions/configure-aws-credentials@v6` moved up to just after the AWS credentials file is written, so the tagging step has credentials; the call was relocated, not duplicated
+** Tags are reported in `$GITHUB_STEP_SUMMARY`
+* *`reusable_cleanup_stale_servers.yml`* (new): Centralised TTL cleanup
+** Lists running servers (via the `bonita-aws` `list` command) and destroys those whose `presales:expires-at` tag is in the past
+** An instance is destroyed only if it is `running`, not tagged `ofelia:skipLicenseCheck=true`, and carries a `presales:expires-at` tag that parses as an ISO-8601 timestamp already elapsed. Every other case is skipped and explained in the log: an untagged instance is left alone (retag manually if that was an oversight), an unparseable tag is left alone out of caution.
+** Input `dry_run` (default `'false'` on `workflow_call`, `true` on `workflow_dispatch`) lists candidates without destroying them
+** Required secrets: `AWS_KEY_ID`, `AWS_ACCESS_KEY`, `GHP_TOKEN`
+* *`scheduled_cleanup_stale_servers.yml`* (new): Scheduled "TTL Cleanup" caller, every 6 hours (cron `0 */6 * * *`), calling the reusable workflow with `dry_run: 'false'` explicitly — `workflow_dispatch` input defaults are not applied on `schedule` events
+** The 6h cadence is deliberate and does not follow `scheduled_check_licenses.yml`: a weekly sweep would let a 48h TTL overrun by up to 7 days
+* *`test_cleanup_stale_servers.yml`* (new): `workflow_dispatch` test workflow, dry-run by default, per the repository test-workflow convention
+* *`test_create_server.yml`*: Expose `typology` (as a `choice`), `owner` and `ttl_hours` for manual testing
+
+=== Documentation
+
+* *Trigger policy* documented in `README.adoc`, `CLAUDE.md` and `.claude/skills/bonita-github-actions/`: any caller of `reusable_create_server.yml`, `reusable_build_sca.yml` or `reusable_deploy_sca.yml` must be triggered by `workflow_dispatch` **only** — never `push`, never `pull_request`. Read-only monitoring, the delete-only `reusable_pr_closed.yml` and the scheduled TTL cleanup remain deliberately automatic.
+* All `on: push` examples in `README.adoc` and `CLAUDE.md` switched to `on: workflow_dispatch`
+* Document the governance tags, `reusable_cleanup_stale_servers.yml`, and the `reusable_create_server.yml` `stack_id` input (undocumented since v1.26.0)
+* `.claude/skills/bonita-github-actions/`: new required inputs with an up-to-date call example, and the aligned stack ID convention
+
+=== Known limitation
+
+* The governance tagging step resolves the EC2 instance ID from the `instanceId` field of `aws_instance.yaml`. That field could not be confirmed against any `bonita-aws` output (workflows read only `publicDnsName`; the archived artifact of the last `test_create_server` run has expired, run logs return HTTP 410, and the `bonita-aws` repository is not accessible). The step therefore emits a `::warning::` and skips rather than failing: the instance is created normally but is **not** governed by the TTL cleanup. Check a real run's step summary before treating the mechanism as reliable.
+
+== Version 1.29.0 (2026-08-28)
+
+=== Fixes
+
+* *`reusable_pr_closed.yml`*: Align the AWS stack ID with `reusable_create_server.yml`
+** The workflow computed its own `{repo}_{prNumber}-merge` identifier and passed it to the `bonita-aws` `status` and `delete` commands, while `reusable_create_server.yml` provisions the instance under `{repo}_{branch}`. The two never matched, so the PR cleanup targeted a stack that does not exist and the EC2 instance created for the PR branch was left running.
+** "Set AWS stack ID" now uses the same formula as `reusable_create_server.yml`: `{repo}_{branch}`, slashes replaced by dashes, with `pr_head_ref` as the branch
+** "Status of AWS server" and "Delete AWS server" now use the recomputed stack ID
+** The legacy PR identifier is kept as an informational job output (`pr_identifier`) and a step-summary row, so the job output contract is unchanged
+
+=== Features
+
+* *`reusable_pr_closed.yml`*: New optional `stack_id` input — same name, description, sanitization and override semantics as the one already in `reusable_create_server.yml`, so both sides can be overridden coherently
+* *`test_pr_merged.yml`*: Expose `stack_id` as a `workflow_dispatch` input for manual testing
+
+=== Documentation
+
+* Document `reusable_pr_closed.yml` in `README.adoc` (it had no section): inputs, secrets, stack ID rule, outputs, example
+* Update the `CLAUDE.md` inputs list and behavior description
+
 == Version 1.28.0 (2026-06-19)
 
 === Features
