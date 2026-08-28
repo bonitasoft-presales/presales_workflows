@@ -51,6 +51,11 @@ on:
         type: string
         required: false
         default: '1.8'
+      stack_id:
+        description: 'Override stack ID (defaults to {repo}_{branch} if not provided)'
+        type: string
+        required: false
+        default: ''
     secrets:
       JFROG_USER:
         required: true
@@ -244,10 +249,19 @@ jobs:
       - name: Set AWS stack ID
         id: aws_stack_id
         run: |
+          # Same formula as reusable_create_server.yml: {repo}_{branch}, slashes sanitized.
+          # The branch is the PR head ref, which is the ref create_server ran on.
           OWNER="${{ steps.split_repo.outputs.owner }}"
           REPO="${{ steps.split_repo.outputs.repo }}"
-          PR_ID="${{ steps.pr_identifier.outputs.pr_id }}"
-          echo "stackId=${PR_ID}" >> $GITHUB_OUTPUT
+          if [ -n "${{ inputs.stack_id }}" ]; then
+            stackId=$(echo "${{ inputs.stack_id }}" | sed 's/\//-/g')
+          else
+            modifiedRepo=$(echo ${REPO} | sed 's/\//-/g')
+            modifiedBranch=$(echo ${{ inputs.pr_head_ref }} | sed 's/\//-/g')
+            stackId="${modifiedRepo}_${modifiedBranch}"
+          fi
+          echo "stackId: ${stackId}"
+          echo "stackId=${stackId}" >> $GITHUB_OUTPUT
 
           cat >> $GITHUB_STEP_SUMMARY <<EOF
           ### 🏷️ AWS Stack ID
@@ -258,7 +272,8 @@ jobs:
           | **Repository** | \`${REPO}\` |
           | **PR Number** | #${{ inputs.pr_number }} |
           | **Branch** | \`${{ inputs.pr_head_ref }}\` |
-          | **Stack ID (PR-based)** | \`${PR_ID}\` |
+          | **Stack ID** | \`${stackId}\` |
+          | **PR identifier (legacy, informational)** | \`${{ steps.pr_identifier.outputs.pr_id }}\` |
           EOF
 
       - name: Get AWS lib
@@ -274,12 +289,12 @@ jobs:
         run: |
           java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
           -c status \
-          --stack-id ${{ steps.pr_identifier.outputs.pr_id }} \
+          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
           --key-name ${{ inputs.key_name }}
 
       - name: Delete AWS server
         run: |
           java -jar bonita-aws-${{ inputs.bonita_aws_version }}-jar-with-dependencies.jar \
           -c delete \
-          --stack-id ${{ steps.pr_identifier.outputs.pr_id }} \
+          --stack-id ${{ steps.aws_stack_id.outputs.stackId }} \
           --key-name ${{ inputs.key_name }} \

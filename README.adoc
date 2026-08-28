@@ -875,6 +875,150 @@ jobs:
     secrets: inherit
 ----
 
+---
+
+=== reusable_pr_closed.yml
+
+Handles PR closure events (merged or closed without merge): reports the PR outcome, then looks up and deletes the AWS server that was provisioned for the PR branch.
+
+==== Inputs
+
+[cols="2,1,2,3", options="header"]
+|===
+|Name |Required |Default |Description
+
+|`repository_name`
+|Yes
+|-
+|Repository name (e.g. `owner/repo`)
+
+|`pr_number`
+|Yes
+|-
+|PR number
+
+|`pr_title`
+|Yes
+|-
+|PR title
+
+|`pr_merged`
+|Yes
+|-
+|Whether the PR was merged (boolean)
+
+|`pr_base_ref`
+|Yes
+|-
+|Base branch name
+
+|`pr_head_ref`
+|Yes
+|-
+|Head branch name
+
+|`pr_actor_login`
+|Yes
+|-
+|User who merged or closed the PR
+
+|`pr_merge_commit_sha`
+|No
+|`''`
+|Merge commit SHA (empty if not merged)
+
+|`aws_region`
+|No
+|`eu-west-1`
+|AWS region
+
+|`key_name`
+|No
+|`presale-ci-eu-west-1`
+|AWS key pair name
+
+|`bonita_aws_version`
+|No
+|`1.8`
+|Version of bonita-aws library
+
+|`stack_id`
+|No
+|`''`
+|Override stack ID (defaults to `{repo}_{pr_head_ref}` if not provided)
+|===
+
+==== Secrets
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`JFROG_USER`
+|JFrog Artifactory username
+
+|`JFROG_TOKEN`
+|JFrog Artifactory token
+
+|`GHP_USER`
+|GitHub Packages username
+
+|`GHP_TOKEN`
+|GitHub Packages token
+
+|`AWS_KEY_ID`
+|AWS access key ID
+
+|`AWS_ACCESS_KEY`
+|AWS secret access key
+|===
+
+==== Stack ID
+
+The stack ID is computed with the **same formula as `reusable_create_server.yml`**: `{repo}_{branch}`, with slashes replaced by dashes, where `branch` is `pr_head_ref`. This guarantees that the server created for the branch is the one that gets looked up and deleted. Provide `stack_id` explicitly to override it — use the same override on both workflows.
+
+==== Outputs
+
+[cols="2,3", options="header"]
+|===
+|Name |Description
+
+|`aws_public_dns`
+|Public DNS of the AWS server
+
+|`stack_id`
+|Computed (or overridden) AWS stack ID
+
+|`pr_identifier`
+|Legacy `{repo}_{pr_number}-merge` identifier, kept for information only — no longer used for AWS operations
+|===
+
+==== Example
+
+[source,yaml]
+----
+name: Handle PR Closure
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  handle_pr:
+    uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_pr_closed.yml@v1.28.0
+    with:
+      repository_name: ${{ github.repository }}
+      pr_number: ${{ github.event.pull_request.number }}
+      pr_title: ${{ github.event.pull_request.title }}
+      pr_merged: ${{ github.event.pull_request.merged }}
+      pr_base_ref: ${{ github.event.pull_request.base.ref }}
+      pr_head_ref: ${{ github.event.pull_request.head.ref }}
+      pr_actor_login: ${{ github.event.pull_request.merged && github.event.pull_request.merged_by.login || github.event.pull_request.user.login }}
+      pr_merge_commit_sha: ${{ github.event.pull_request.merge_commit_sha }}
+    secrets: inherit
+----
+
+NOTE: `reusable_pr_closed.yml` only deletes resources, so a `pull_request` trigger is appropriate here. Workflows that *create* a server, build or deploy must be triggered by `workflow_dispatch` only.
+
 == Complete Pipeline Example
 
 [source,yaml]

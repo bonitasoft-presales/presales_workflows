@@ -43,6 +43,11 @@ on:
         required: false
         type: string
         default: 'abc123def456'
+      stack_id:
+        description: 'Override stack ID (leave empty to use {repo}_{pr_head_ref})'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   handle_pr_closed:
@@ -56,4 +61,5 @@ jobs:
       pr_head_ref: ${{ github.event.inputs.pr_head_ref || 'feature/test-branch' }}
       pr_actor_login: ${{ github.event.inputs.pr_actor_login || 'test-user' }}
       pr_merge_commit_sha: ${{ github.event.inputs.pr_merge_commit_sha || 'abc123def456' }}
+      stack_id: ${{ github.event.inputs.stack_id }}
     secrets: inherit
