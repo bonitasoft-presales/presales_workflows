@@ -210,6 +210,7 @@ The `reusable_pr_closed.yml` workflow handles PR closure events and distinguishe
 - `aws_region` (optional): AWS region (default: 'eu-west-1')
 - `key_name` (optional): AWS key pair name (default: 'presale-ci-eu-west-1')
 - `bonita_aws_version` (optional): Version of bonita-aws library (default: '1.8')
+- `stack_id` (optional): Override stack ID (defaults to `{repo}_{pr_head_ref}`, same formula as `reusable_create_server.yml`)
 
 **Example usage:**
 ```yaml
@@ -237,7 +238,7 @@ jobs:
 **Behavior:**
 - When a PR is **merged**: Displays PR details with merge commit SHA in a formatted markdown table
 - When a PR is **closed without merging**: Displays PR details and status in a formatted markdown table
-- Computes and displays the AWS stack ID based on repository and branch names
+- Computes the AWS stack ID with the **same formula as `reusable_create_server.yml`** (`{repo}_{branch}`, slashes replaced by dashes, branch = `pr_head_ref`), so the server created for the branch is the one looked up and deleted. An explicit `stack_id` input overrides it.
 - Checks the status of the AWS server associated with the PR branch
 - Displays AWS server information (DNS, region, stack ID) in a formatted markdown table
 - Uploads instance information as an artifact
@@ -259,7 +260,7 @@ Two test workflows are available for testing the PR closed handler:
 - Triggers via `workflow_dispatch` only
 - Accepts custom parameters for testing different scenarios
 - Useful for testing without creating actual PRs
-- Parameters: `pr_number`, `pr_title`, `pr_merged`, `pr_base_ref`, `pr_head_ref`, `pr_actor_login`, `pr_merge_commit_sha`
+- Parameters: `pr_number`, `pr_title`, `pr_merged`, `pr_base_ref`, `pr_head_ref`, `pr_actor_login`, `pr_merge_commit_sha`, `stack_id`
 
 **To manually test:**
 1. Go to Actions tab → "Test PR Merged" workflow
