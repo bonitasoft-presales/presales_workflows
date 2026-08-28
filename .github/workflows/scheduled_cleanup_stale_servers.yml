@@ -1,0 +1,21 @@
+name: TTL Cleanup
+on:
+  schedule:
+    # Every 6 hours (00:00, 06:00, 12:00, 18:00 UTC).
+    # GitHub cron has no timezone/DST support, and this job is timezone-agnostic:
+    # it only compares the presales:expires-at tag (UTC) with the current UTC time.
+    #
+    # Frequency rationale: scheduled_check_licenses.yml runs weekly, but that
+    # cadence is inappropriate here — the default TTL is 48h, so a weekly sweep
+    # would leave an expired T1 instance running for up to 7 extra days. A 6h
+    # sweep bounds the overrun to 6h.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup_stale_servers:
+    uses: ./.github/workflows/reusable_cleanup_stale_servers.yml
+    with:
+      # Explicit value: workflow_dispatch input defaults are NOT applied on schedule events.
+      dry_run: 'false'
+    secrets: inherit

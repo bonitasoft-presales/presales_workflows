@@ -1,0 +1,19 @@
+name: test_cleanup_stale_servers
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Si true, liste les instances à détruire sans les détruire réellement'
+        type: choice
+        required: true
+        default: 'true'
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  cleanup_stale_servers:
+    uses: ./.github/workflows/reusable_cleanup_stale_servers.yml
+    with:
+      dry_run: ${{ inputs.dry_run }}
+    secrets: inherit

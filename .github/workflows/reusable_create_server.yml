@@ -42,6 +42,19 @@ on:
         type: string
         required: false
         default: ''
+      typology:
+        description: 'Typologie presales:typology (T1_poc ou T2_showroom)'
+        type: string
+        required: true
+      owner:
+        description: 'presales:owner -- consultant ou équipe responsable'
+        type: string
+        required: true
+      ttl_hours:
+        description: 'presales:expires-at -- durée de vie en heures avant nettoyage automatique (T1 uniquement ; ignoré si typology=T2_showroom)'
+        type: string
+        required: false
+        default: '48'
     secrets:
       JFROG_USER:
         required: true
@@ -179,6 +192,12 @@ jobs:
             aws_secret_access_key = ${{ secrets.AWS_ACCESS_KEY }}
             region = ${{ inputs.aws_region }}
 
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws_region }}
+
       - name: Set AWS stack ID
         id: aws_stack_id
         run: |
@@ -224,6 +243,39 @@ jobs:
           cp ${{ github.workspace }}/${{ steps.aws_stack_id.outputs.stackId }}.yaml ${{ github.workspace }}/aws_instance.yaml
           ls -ltr ${{ github.workspace }}/aws_instance.yaml
 
+      - name: Poser les tags de gouvernance
+        run: |
+          INSTANCE_ID=$(python3 -c "
+          import yaml
+          with open('${{ github.workspace }}/aws_instance.yaml') as f:
+              data = yaml.safe_load(f)
+          print(data.get('instanceId', ''))
+          ")
+          if [ -z "$INSTANCE_ID" ]; then
+            echo "::warning::instanceId introuvable dans aws_instance.yaml -- tagging de gouvernance ignoré, à corriger avant de considérer ce mécanisme fiable."
+            exit 0
+          fi
+
+          EXPIRES_AT=""
+          if [ "${{ inputs.typology }}" = "T1_poc" ]; then
+            EXPIRES_AT=$(date -u -d "+${{ inputs.ttl_hours }} hours" +"%Y-%m-%dT%H:%M:%SZ")
+          fi
+
+          aws ec2 create-tags \
+            --region ${{ inputs.aws_region }} \
+            --resources "$INSTANCE_ID" \
+            --tags \
+              "Key=presales:typology,Value=${{ inputs.typology }}" \
+              "Key=presales:owner,Value=${{ inputs.owner }}" \
+              ${EXPIRES_AT:+"Key=presales:expires-at,Value=$EXPIRES_AT"}
+
+          echo "## Tags de gouvernance" >> $GITHUB_STEP_SUMMARY
+          echo "| Clé | Valeur |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| presales:typology | ${{ inputs.typology }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| presales:owner | ${{ inputs.owner }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| presales:expires-at | ${EXPIRES_AT:-N/A (T2)} |" >> $GITHUB_STEP_SUMMARY
+
       - name: Archive artifact instance.yaml file
         uses: actions/upload-artifact@v7
         with:
@@ -245,12 +297,6 @@ jobs:
         id: display-env-variable
         run: |
           echo "set AWS_PUBLIC_DNS_HOSTNAME to [${AWS_PUBLIC_DNS_HOSTNAME}]" 
-
-      - uses: aws-actions/configure-aws-credentials@v6
-        with:
-          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-region: ${{ inputs.aws_region }}
 
       - uses: passeidireto/aws-add-ip-to-security-group-action@v1.0.0
         with:

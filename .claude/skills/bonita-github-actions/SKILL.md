@@ -27,6 +27,42 @@ Follow these steps:
     * Example: For Bonita 10.2.x projects, use `LICENCE_V10_2_BASE64`
     * Read the project version from `pom.xml` in the `<parent><version>` field
     * Validate the workflow maps the parameter correctly: `licence_base64: ${{ secrets.LICENCE_V10_2_BASE64 }}` 
+  * **Trigger convention (MUST enforce)**: any job that calls
+    `reusable_create_server.yml`, `reusable_build_sca.yml` or `reusable_deploy_sca.yml`
+    must live in a caller workflow triggered **only** by `workflow_dispatch`.
+    * No `push`, no `pull_request` trigger may reach those three workflows — creating an
+      EC2 instance, building or deploying must never start on its own.
+    * Report any caller workflow that violates this as a finding, and propose replacing the
+      trigger with `workflow_dispatch`.
+    * This does **not** apply to read-only monitoring (`reusable_list_server.yml`,
+      `reusable_check_licenses.yml`), to `reusable_pr_closed.yml` (deletes only), nor to the
+      scheduled TTL cleanup (`scheduled_cleanup_stale_servers.yml`) — those stay automatic
+      on purpose.
+  * **Governance inputs of `reusable_create_server.yml` (since v2.0.0, breaking)**:
+    * `typology` (**required**): `T1_poc` or `T2_showroom` → tag `presales:typology`
+    * `owner` (**required**): consultant or team responsible → tag `presales:owner`
+    * `ttl_hours` (optional, default `48`): lifetime in hours → tag `presales:expires-at`,
+      set for `T1_poc` only and ignored for `T2_showroom`
+    * A caller pinned to `@v2.0.0` or later without `typology` and `owner` fails at
+      startup. Flag it and propose the updated call:
+
+      ```yaml
+      jobs:
+        create_server:
+          uses: bonitasoft-presales/presales_workflows/.github/workflows/reusable_create_server.yml@v2.0.0
+          with:
+            typology: 'T1_poc'
+            owner: 'firstname.lastname'
+            ttl_hours: '48'
+          secrets: inherit
+      ```
+    * Instances tagged `presales:typology=T1_poc` are destroyed automatically once
+      `presales:expires-at` is passed. Untagged instances and instances tagged
+      `ofelia:skipLicenseCheck=true` are left alone.
+  * **Stack ID convention**: `reusable_create_server.yml` and `reusable_pr_closed.yml`
+    both compute `{repo}_{branch}` (slashes replaced by dashes), and both accept the same
+    optional `stack_id` override. If a caller overrides `stack_id` on creation, it must pass
+    the same value to `reusable_pr_closed.yml`, otherwise the PR server is never deleted.
   * **IMPORTANT**: Specifically check if workflows use remote actions from `bonitasoft-presales/presales_workflows` repository
     - Identify which actions from this repo are used (e.g., `bonitasoft-presales/presales_workflows/.github/actions/...`)
     - Note the version/ref used (commit SHA, tag, or branch)
